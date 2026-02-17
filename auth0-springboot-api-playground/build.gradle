@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.auth0'
+version = '1.0.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':auth0-springboot-api')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.named('bootJar') {
+    dependsOn(':auth0-springboot-api:bootJar')
+}

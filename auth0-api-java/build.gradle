@@ -1,0 +1,48 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.auth0'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(Javadoc) {
+    enabled = false
+}
+
+dependencies {
+    // Core dependencies
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    
+    // JWT validation dependencies
+    implementation 'com.auth0:java-jwt:4.4.0'
+    implementation 'com.auth0:jwks-rsa:0.22.1'
+    
+    // Test dependencies
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:4.11.0'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+}
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnit()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+// This module is internal - no publishing configuration needed
+// It will be bundled into auth0-springboot-api as a transitive dependency

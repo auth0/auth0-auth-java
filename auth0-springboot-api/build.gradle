@@ -1,0 +1,87 @@
+plugins {
+    id 'java-library'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'maven-publish'
+}
+
+group = 'com.auth0'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Internal dependency - not exposed to consumers
+    api project(':auth0-api-java')
+    
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+
+
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+// Don't build executable JAR for library
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            
+            pom {
+                name = 'Auth0 Spring Boot API'
+                description = 'Spring Boot integration for Auth0 Java SDK'
+                url = 'https://github.com/atko-cic/auth0-auth-java'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'auth0'
+                        name = 'Auth0 Team'
+                        email = 'support@auth0.com'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/atko-cic/auth0-auth-java.git'
+                    developerConnection = 'scm:git:ssh://github.com/atko-cic/auth0-auth-java.git'
+                    url = 'https://github.com/atko-cic/auth0-auth-java'
+                }
+            }
+        }
+    }
+}

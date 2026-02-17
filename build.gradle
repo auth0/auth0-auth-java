@@ -1,0 +1,26 @@
+//plugins {
+//    id 'java'
+//}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+//subprojects {
+//    apply plugin: 'java'
+//    apply plugin: 'maven-publish'
+//
+//    group = 'com.auth0'
+//    version = '1.0.0-SNAPSHOT'
+//
+//    java {
+//        sourceCompatibility = JavaVersion.VERSION_1_8
+//        targetCompatibility = JavaVersion.VERSION_1_8
+//    }
+//
+//    repositories {
+//        mavenCentral()
+//    }
+//}

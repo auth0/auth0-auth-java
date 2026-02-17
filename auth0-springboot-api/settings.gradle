@@ -1,0 +1,3 @@
+rootProject.name = 'auth0-springboot-api'
+
+include 'auth0-api-java'

@@ -1,0 +1,3 @@
+auth0:
+  domain: your-tenant.auth0.com
+  audience: https://your-api-identifier

@@ -1,0 +1,4 @@
+# src/main/resources/application.yml
+auth0:
+  domain: your-auth0-domain
+  audience: your-auth0-audience

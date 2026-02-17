@@ -1,0 +1,2 @@
+com.auth0.spring.boot.Auth0AutoConfiguration
+com.auth0.spring.boot.Auth0SecurityAutoConfiguration

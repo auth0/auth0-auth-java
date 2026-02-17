@@ -1,0 +1,10 @@
+rootProject.name = 'auth0-auth-java'
+
+// Only include Spring Boot module for now
+include 'auth0-springboot-api'
+include 'auth0-api-java'
+
+// auth0-api-java module commented out - can be moved to separate repo later
+// include 'packages:auth0-api-java'
+// project(':packages:auth0-api-java').name = 'auth0-api-java'
+include 'auth0-springboot-api-playground'
