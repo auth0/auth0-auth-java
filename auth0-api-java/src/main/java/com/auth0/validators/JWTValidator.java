@@ -11,6 +11,8 @@ import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.models.HttpRequestInfo;
+
 import java.security.interfaces.RSAPublicKey;
 
 import static com.auth0.jwt.JWT.require;
@@ -64,7 +66,7 @@ public class JWTValidator {
      * @return the decoded and verified JWT
      * @throws BaseAuthException if validation fails
      */
-    public DecodedJWT validateToken(String token) throws BaseAuthException {
+    public DecodedJWT validateToken(String token, HttpRequestInfo httpRequestInfo) throws BaseAuthException {
 
         if (token == null || token.trim().isEmpty()) {
             throw new MissingRequiredArgumentException("access_token");
@@ -89,9 +91,9 @@ public class JWTValidator {
     /**
      * Validates a JWT and ensures all required scopes are present.
      */
-    public DecodedJWT validateTokenWithRequiredScopes(String token, String... requiredScopes)
+    public DecodedJWT validateTokenWithRequiredScopes(String token, HttpRequestInfo httpRequestInfo, String... requiredScopes)
             throws BaseAuthException {
-        DecodedJWT jwt = validateToken(token);
+        DecodedJWT jwt = validateToken(token, httpRequestInfo);
         try {
             ClaimValidator.checkRequiredScopes(jwt, requiredScopes);
             return jwt;
@@ -103,9 +105,9 @@ public class JWTValidator {
     /**
      * Validates a JWT and ensures it has *any* of the provided scopes.
      */
-    public DecodedJWT validateTokenWithAnyScope(String token, String... scopes)
+    public DecodedJWT validateTokenWithAnyScope(String token, HttpRequestInfo httpRequestInfo, String... scopes)
             throws BaseAuthException {
-        DecodedJWT jwt = validateToken(token);
+        DecodedJWT jwt = validateToken(token, httpRequestInfo);
         try {
             ClaimValidator.checkAnyScope(jwt, scopes);
             return jwt;
@@ -117,9 +119,9 @@ public class JWTValidator {
     /**
      * Validates a JWT and ensures a claim equals the expected value.
      */
-    public DecodedJWT validateTokenWithClaimEquals(String token, String claim, Object expected)
+    public DecodedJWT validateTokenWithClaimEquals(String token, HttpRequestInfo httpRequestInfo,  String claim, Object expected)
             throws BaseAuthException {
-        DecodedJWT jwt = validateToken(token);
+        DecodedJWT jwt = validateToken(token, httpRequestInfo);
         try {
             ClaimValidator.checkClaimEquals(jwt, claim, expected);
             return jwt;
@@ -131,9 +133,9 @@ public class JWTValidator {
     /**
      * Validates a JWT and ensures a claim includes all expected values.
      */
-    public DecodedJWT validateTokenWithClaimIncludes(String token, String claim, Object... expectedValues)
+    public DecodedJWT validateTokenWithClaimIncludes(String token, HttpRequestInfo httpRequestInfo, String claim, Object... expectedValues)
             throws BaseAuthException {
-        DecodedJWT jwt = validateToken(token);
+        DecodedJWT jwt = validateToken(token, httpRequestInfo);
         try {
             ClaimValidator.checkClaimIncludes(jwt, claim, expectedValues);
             return jwt;
@@ -142,9 +144,9 @@ public class JWTValidator {
         }
     }
 
-    public DecodedJWT validateTokenWithClaimIncludesAny(String token, String claim, Object... expectedValues)
+    public DecodedJWT validateTokenWithClaimIncludesAny(String token, HttpRequestInfo httpRequestInfo, String claim, Object... expectedValues)
             throws BaseAuthException {
-        DecodedJWT jwt = validateToken(token);
+        DecodedJWT jwt = validateToken(token, httpRequestInfo);
         try {
             ClaimValidator.checkClaimIncludesAny(jwt, claim, expectedValues);
             return jwt;

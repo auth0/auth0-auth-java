@@ -33,7 +33,7 @@ public class DisabledDPoPAuthenticationTest {
         when(extractor.extractBearer(anyMap())).thenReturn(
                 new com.auth0.models.AuthToken("token", null, null)
         );
-        when(jwtValidator.validateToken("token")).thenReturn(jwt);
+        when(jwtValidator.validateToken("token", null)).thenReturn(jwt);
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer token");
 
@@ -43,7 +43,7 @@ public class DisabledDPoPAuthenticationTest {
 
 
         assertThat(ctx).isNotNull();
-        verify(jwtValidator).validateToken("token");
+        verify(jwtValidator).validateToken("token", null);
     }
 
     @Test

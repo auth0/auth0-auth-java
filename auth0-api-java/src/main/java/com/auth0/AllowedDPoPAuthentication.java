@@ -37,7 +37,7 @@ class AllowedDPoPAuthentication extends AbstractAuthentication {
             scheme = extractor.getScheme(normalizedHeader);
 
             if (scheme.equalsIgnoreCase(AuthConstants.BEARER_SCHEME)) {
-                DecodedJWT jwtToken = validateBearerToken(normalizedHeader);
+                DecodedJWT jwtToken = validateBearerToken(normalizedHeader, requestInfo);
                 AuthValidatorHelper.validateNoDpopPresence(normalizedHeader, jwtToken);
                 return buildContext(jwtToken);
             }

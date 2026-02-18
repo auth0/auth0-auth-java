@@ -51,45 +51,7 @@ The core library (`auth0-api-java`) is currently an internal module used by the 
 - JWT validation with Auth0 JWKS integration
 - DPoP proof validation per [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)
 - Flexible authentication strategies
-- Comprehensive claim validation
 
-## 🔧 Advanced Configuration
-
-### Custom Claim Validation
-
-While the Spring Boot integration provides automatic validation, developers can access the underlying `auth0-api-java` validation utilities for custom scenarios:
-
-```java
-@RestController
-public class AdvancedController {
-
-    @Autowired
-    private AuthClient authClient; 
-
-    @GetMapping("/api/custom-validation")
-    public ResponseEntity<String> customValidation(HttpServletRequest request) {
-        try {
-            String token = extractTokenFromRequest(request);
-            JWTValidator validator = new JWTValidator(authClient.getAuthOptions());
-
-            DecodedJWT jwt = validator.validateTokenWithClaimEquals(token, "role", "admin");
-            
-            return ResponseEntity.ok("Advanced validation passed");
-
-        } catch (BaseAuthException e) {
-            return ResponseEntity.status(401).body("Validation failed: " + e.getMessage());
-        }
-    }
-
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-        throw new IllegalArgumentException("No Bearer token found");
-    }
-}
-```
 
 ## 📚 Documentation
 
@@ -135,7 +97,7 @@ The core library (`auth0-api-java`) is bundled as an internal dependency within 
 4. Add tests for new functionality
 5. Ensure all tests pass: `./gradlew test`
 6. Ensure your commits are signed
-7. 7Submit a pull request
+7. Submit a pull request
 
 ## 📄 License
 

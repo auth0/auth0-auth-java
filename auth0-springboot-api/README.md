@@ -219,28 +219,40 @@ public class CustomController {
 }
 ```
 
-### Custom Authentication Handlers
+### Custom Claim Validation
 
-Access JWT claims and customize authentication logic:
+Access JWT claims directly through `Auth0AuthenticationToken`'s clean API:
 
 ```java
-@GetMapping("/api/user-profile")
-public ResponseEntity<Map<String, Object>> userProfile(Authentication authentication) {
-   // Cast to Auth0 authentication token to access claims
-   Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
-   Map<String, Object> claims = auth0Token.getAuthenticationContext().getClaims();
+@RestController
+public class UserController {
 
-   String userId = (String) claims.get("sub");
-   String email = (String) claims.get("email");
+    @GetMapping("/api/user-profile")
+    public ResponseEntity<Map<String, Object>> userProfile(Authentication authentication) {
+        // Cast to Auth0AuthenticationToken to access Auth0-specific features
+        Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
 
-   String scopes = (String) claims.get("scope");
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("userId", auth0Token.getClaim("sub"));
+        profile.put("email", auth0Token.getClaim("email"));
+        profile.put("scopes", auth0Token.getScopes()); // Set<String> of scopes
+        profile.put("authorities", authentication.getAuthorities()); // Spring Security authorities
 
-   Map<String, Object> profile = new HashMap<>();
-   profile.put("userId", userId);
-   profile.put("email", email);
-   profile.put("scopes", scopes);
+        return ResponseEntity.ok(profile);
+    }
 
-   return ResponseEntity.ok(profile);
+    @GetMapping("/api/admin")
+    public ResponseEntity<String> adminEndpoint(Authentication authentication) {
+        // Validate custom claims using individual claim access
+        Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
+
+        String userRole = (String) auth0Token.getClaim("role");
+        if ("admin".equals(userRole)) {
+            return ResponseEntity.ok("Admin access granted");
+        } else {
+            return ResponseEntity.status(403).body("Admin role required");
+        }
+    }
 }
 ```
 
@@ -256,7 +268,7 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                    .authorizeHttpRequests(auth -> auth
-                       .requestMatchers("/api/admin/**").hasAuthority("admin")
+                       .requestMatchers("/api/admin/**").authenticated()
                            .requestMatchers("/api/users/**").hasAnyAuthority("SCOPE_read:messages")
                            .requestMatchers("/api/protected").authenticated()
                        .anyRequest().permitAll())
@@ -264,19 +276,42 @@ public class SecurityConfig {
                    .build();
     }
 }
+```
 
-@Autowired
-private ScopeValidator scopeValidator;
-@GetMapping("/admin")
-public ResponseEntity<Map<String, Object>> adminEndpoint(Authentication authentication) {
-   System.out.println("🔐 Received request for /api/admin resource by user: " + authentication.getName());
-   if (!scopeValidator.hasRequiredScopes(authentication, "read:messages")) {
-      return ResponseEntity.status(HttpStatus.FORBIDDEN)
-              .body(Map.of("error", "insufficient_scope"));
-   }
-   return ResponseEntity.ok(Map.of("message", "Admin access granted"));
+
+For custom scope validation in controllers:
+
+```java
+@Component
+public class ScopeValidator {
+    public boolean hasRequiredScopes(Authentication authentication, String... requiredScopes) {
+        if (!(authentication instanceof Auth0AuthenticationToken)) {
+            return false;
+        }
+        Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
+
+        Set<String> tokenScopes = auth0Token.getScopes();
+        return tokenScopes.containsAll(Arrays.asList(requiredScopes));
+    }
+}
+
+@RestController
+public class AdminController {
+
+    @Autowired
+    private ScopeValidator scopeValidator;
+
+    @GetMapping("/api/admin")
+    public ResponseEntity<Map<String, Object>> adminEndpoint(Authentication authentication) {
+        if (!scopeValidator.hasRequiredScopes(authentication, "admin")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "insufficient_scope"));
+        }
+        return ResponseEntity.ok(Map.of("message", "Admin access granted"));
+    }
 }
 ```
+
 
 ## Examples
 
@@ -306,9 +341,8 @@ public class ApiController {
 @GetMapping("/conditional")
 public ResponseEntity<String> conditionalEndpoint(Authentication authentication) {
    Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
-   Map<String, Object> claims = auth0Token.getAuthenticationContext().getClaims();
 
-   String userRole = (String) claims.get("role");
+   String userRole = (String) auth0Token.getClaim("role");
    if ("admin".equals(userRole)) {
       return ResponseEntity.ok("Admin access granted");
    } else {

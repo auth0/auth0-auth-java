@@ -80,7 +80,7 @@ public class JWTValidatorTest {
     public void validateToken_success() throws Exception {
         String token = validToken();
 
-        DecodedJWT jwt = validator.validateToken(token);
+        DecodedJWT jwt = validator.validateToken(token, null);
 
         assertThat(jwt.getIssuer()).isEqualTo(ISSUER);
         assertThat(jwt.getAudience()).contains(AUDIENCE);
@@ -89,7 +89,7 @@ public class JWTValidatorTest {
 
     @Test(expected = MissingRequiredArgumentException.class)
     public void validateToken_shouldRejectNullToken() throws Exception {
-        validator.validateToken(null);
+        validator.validateToken(null, null);
     }
 
     @Test(expected = VerifyAccessTokenException.class)
@@ -100,14 +100,14 @@ public class JWTValidatorTest {
 
         when(jwk.getPublicKey()).thenReturn(wrongKey);
 
-        validator.validateToken(validToken());
+        validator.validateToken(validToken(), null);
     }
 
     @Test
     public void validateTokenWithRequiredScopes_success() throws Exception {
         String token = tokenWithScopes("read write");
 
-        DecodedJWT jwt = validator.validateTokenWithRequiredScopes(token, "read");
+        DecodedJWT jwt = validator.validateTokenWithRequiredScopes(token, null, "read");
 
         assertThat(jwt).isNotNull();
     }
@@ -116,14 +116,14 @@ public class JWTValidatorTest {
     public void validateTokenWithRequiredScopes_failure() throws Exception {
         String token = tokenWithScopes("read");
 
-        validator.validateTokenWithRequiredScopes(token, "admin");
+        validator.validateTokenWithRequiredScopes(token, null, "admin");
     }
 
     @Test
     public void validateTokenWithAnyScope_success() throws Exception {
         String token = tokenWithScopes("read write");
 
-        DecodedJWT jwt = validator.validateTokenWithAnyScope(token, "admin", "write");
+        DecodedJWT jwt = validator.validateTokenWithAnyScope(token, null, "admin", "write");
 
         assertThat(jwt).isNotNull();
     }
@@ -132,14 +132,14 @@ public class JWTValidatorTest {
     public void validateTokenWithAnyScope_failure() throws Exception {
         String token = tokenWithScopes("read");
 
-        validator.validateTokenWithAnyScope(token, "admin");
+        validator.validateTokenWithAnyScope(token, null, "admin");
     }
 
     @Test
     public void validateTokenWithClaimEquals_success() throws Exception {
         String token = tokenWithEmail("a@b.com");
 
-        DecodedJWT jwt = validator.validateTokenWithClaimEquals(token, "email", "a@b.com");
+        DecodedJWT jwt = validator.validateTokenWithClaimEquals(token, null, "email", "a@b.com");
 
         assertThat(jwt).isNotNull();
     }
@@ -148,14 +148,14 @@ public class JWTValidatorTest {
     public void validateTokenWithClaimEquals_failure() throws Exception {
         String token = tokenWithEmail("a@b.com");
 
-        validator.validateTokenWithClaimEquals(token, "email", "x@y.com");
+        validator.validateTokenWithClaimEquals(token, null, "email", "x@y.com");
     }
 
     @Test
     public void validateTokenWithClaimIncludes_success() throws Exception {
         String token = tokenWithScopes("read write");
 
-        DecodedJWT jwt = validator.validateTokenWithClaimIncludes(token, "scope", "read");
+        DecodedJWT jwt = validator.validateTokenWithClaimIncludes(token, null, "scope", "read");
 
         assertThat(jwt).isNotNull();
     }
@@ -164,14 +164,14 @@ public class JWTValidatorTest {
     public void validateTokenWithClaimIncludes_failure() throws Exception {
         String token = tokenWithScopes("read");
 
-        validator.validateTokenWithClaimIncludes(token, "scope", "admin");
+        validator.validateTokenWithClaimIncludes(token, null, "scope", "admin");
     }
 
     @Test
     public void validateTokenWithClaimIncludesAny_success() throws Exception {
         String token = tokenWithScopes("read write");
 
-        DecodedJWT jwt = validator.validateTokenWithClaimIncludesAny(token, "scope", "admin", "write");
+        DecodedJWT jwt = validator.validateTokenWithClaimIncludesAny(token, null, "scope", "admin", "write");
 
         assertThat(jwt).isNotNull();
     }
@@ -180,7 +180,7 @@ public class JWTValidatorTest {
     public void validateTokenWithClaimIncludesAny_failure() throws Exception {
         String token = tokenWithScopes("read");
 
-        validator.validateTokenWithClaimIncludesAny(token, "scope", "admin");
+        validator.validateTokenWithClaimIncludesAny(token, null, "scope", "admin");
     }
 
     @Test
