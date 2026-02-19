@@ -160,19 +160,6 @@ class Auth0AuthenticationTokenTest {
     }
 
     @Test
-    @DisplayName("Should return authentication context from getter")
-    void getAuthenticationContext_shouldReturnContext() {
-        AuthenticationContext context = mock(AuthenticationContext.class);
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", "auth0|123456789");
-        when(context.getClaims()).thenReturn(claims);
-
-        Auth0AuthenticationToken token = new Auth0AuthenticationToken(context);
-
-        assertEquals(context, token.getAuthenticationContext());
-    }
-
-    @Test
     @DisplayName("Should create authorities with scopes containing special characters")
     void createAuthorities_shouldHandleSpecialCharacters_inScopes() {
         AuthenticationContext context = mock(AuthenticationContext.class);

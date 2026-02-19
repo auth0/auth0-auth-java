@@ -6,7 +6,6 @@ import com.auth0.exception.BaseAuthException;
 import com.auth0.models.AuthOptions;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
-import com.auth0.validators.JWTValidator;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;

@@ -8,6 +8,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -76,11 +78,43 @@ public class Auth0AuthenticationToken extends AbstractAuthenticationToken {
     }
 
     /**
-     * Returns the underlying {@link AuthenticationContext} containing validated JWT claims.
+     * Returns the JWT claims from the authenticated token.
+     * <p>
+     * Provides access to all JWT claims without exposing internal authentication
+     * context.
      *
-     * @return the authentication context
+     * @return a map containing all JWT claims
      */
-    public AuthenticationContext getAuthenticationContext() {
-        return authenticationContext;
+    public Map<String, Object> getClaims() {
+        return authenticationContext.getClaims();
+    }
+
+    /**
+     * Returns the scopes from the JWT as a set of strings.
+     * <p>
+     * Extracts and parses the "scope" claim into individual scope strings.
+     *
+     * @return a set of scope strings, or empty set if no scopes present
+     */
+    public Set<String> getScopes() {
+        Object scopeClaim = authenticationContext.getClaims().get("scope");
+        if (scopeClaim instanceof String && !((String) scopeClaim).isBlank()) {
+            String scopes = (String) scopeClaim;
+            return Set.of(scopes.trim().split("\\s+"));
+        }
+        return Set.of();
+    }
+
+    /**
+     * Returns a specific claim value from the JWT.
+     * <p>
+     * Convenience method for accessing individual claims without getting the full
+     * claims map.
+     *
+     * @param claimName the name of the claim to retrieve
+     * @return the claim value, or null if not present
+     */
+    public Object getClaim(String claimName) {
+        return authenticationContext.getClaims().get(claimName);
     }
 }

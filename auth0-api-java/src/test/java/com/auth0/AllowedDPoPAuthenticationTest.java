@@ -47,7 +47,11 @@ public class AllowedDPoPAuthenticationTest {
         when(extractor.extractBearer(anyMap())).thenReturn(
                 new AuthToken("token", null, null)
         );
-        when(jwtValidator.validateToken("token")).thenReturn(jwt);
+
+        Map<String, String> normalizedHeaders = new HashMap<>();
+        normalizedHeaders.put("authorization", "Bearer token");
+
+        when(jwtValidator.validateToken(eq("token"), eq(normalizedHeaders), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer token");
@@ -55,7 +59,7 @@ public class AllowedDPoPAuthenticationTest {
         AuthenticationContext ctx = auth.authenticate(headers, null);
 
         assertThat(ctx).isNotNull();
-        verify(jwtValidator).validateToken("token");
+        verify(jwtValidator).validateToken("token", normalizedHeaders, null);
         verifyNoInteractions(dpopProofValidator);
     }
 
@@ -69,7 +73,7 @@ public class AllowedDPoPAuthenticationTest {
         when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
                 new com.auth0.models.AuthToken("token", "proof", null)
         );
-        when(jwtValidator.validateToken("token")).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("token"), anyMap(), any())).thenReturn(jwt);
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP token");
         headers.put("dpop", "proof");

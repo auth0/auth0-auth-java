@@ -39,7 +39,7 @@ public class RequiredDPoPAuthenticationTest {
         when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
                 new com.auth0.models.AuthToken("token", "proof", null)
         );
-        when(jwtValidator.validateToken("token")).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("token"), anyMap(), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP token");

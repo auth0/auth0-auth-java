@@ -28,7 +28,7 @@ class DisabledDPoPAuthentication extends AbstractAuthentication {
 
         Map<String, String> normalizedHeader = normalize(headers);
         try {
-            DecodedJWT jwt = validateBearerToken(normalizedHeader);
+            DecodedJWT jwt = validateBearerToken(normalizedHeader, requestInfo);
 
             return buildContext(jwt);
         } catch (BaseAuthException ex){

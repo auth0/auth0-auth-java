@@ -80,12 +80,12 @@ public class AbstractAuthenticationTest {
         DecodedJWT jwt = mock(DecodedJWT.class);
 
         when(extractor.extractBearer(anyMap())).thenReturn(token);
-        when(jwtValidator.validateToken("access")).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("access"), anyMap(), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer access");
 
-        DecodedJWT result = authSystem.validateBearerToken(headers);
+        DecodedJWT result = authSystem.validateBearerToken(headers, null);
 
         assertThat(result).isSameAs(jwt);
     }
@@ -98,7 +98,7 @@ public class AbstractAuthenticationTest {
                 new HttpRequestInfo("GET", "https://api.example.com", null);
 
         when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(token);
-        when(jwtValidator.validateToken("access")).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("access"), anyMap(), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP access");
