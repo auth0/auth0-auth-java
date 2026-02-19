@@ -30,7 +30,7 @@ abstract class AbstractAuthentication {
      */
     protected DecodedJWT validateBearerToken(Map<String, String> headers, HttpRequestInfo httpRequestInfo) throws BaseAuthException {
         AuthToken authToken = extractor.extractBearer(headers);
-        return jwtValidator.validateToken(authToken.getAccessToken(), httpRequestInfo);
+        return jwtValidator.validateToken(authToken.getAccessToken(), headers, httpRequestInfo);
     }
 
     /**
@@ -42,7 +42,7 @@ abstract class AbstractAuthentication {
         AuthValidatorHelper.validateHttpMethodAndHttpUrl(requestInfo);
 
         AuthToken authToken = extractor.extractDPoPProofAndDPoPToken(headers);
-        DecodedJWT decodedJwtToken = jwtValidator.validateToken(authToken.getAccessToken(), requestInfo);
+        DecodedJWT decodedJwtToken = jwtValidator.validateToken(authToken.getAccessToken(), headers, requestInfo);
 
         dpopProofValidator.validate(authToken.getProof(), decodedJwtToken, requestInfo);
 
