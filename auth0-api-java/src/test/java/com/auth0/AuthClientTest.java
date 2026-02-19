@@ -16,8 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AuthClientTest {
-    private static HttpRequestInfo REQUEST =
-            new HttpRequestInfo("GET", "https://api.example.com/resource", null);
 
     @Test
     public void from_createsClient() {
@@ -35,19 +33,21 @@ public class AuthClientTest {
                         .build()
         );
 
+
         assertThatThrownBy(() ->
-                client.verifyRequest(Collections.emptyMap(), REQUEST)
+                client.verifyRequest(getHttpRequestInfo(new HashMap<>()))
         ).isInstanceOf(MissingAuthorizationException.class);
     }
 
     @Test
-    public void allowedMode_rejectsUnknownScheme() {
+    public void allowedMode_rejectsUnknownScheme() throws BaseAuthException {
         AuthClient client = AuthClient.from(validOptions(DPoPMode.ALLOWED));
 
         Map<String, String> headers = Collections.singletonMap("authorization", "Basic abc123");
 
+
         assertThatThrownBy(() ->
-                client.verifyRequest(headers, REQUEST)
+                client.verifyRequest(getHttpRequestInfo(headers))
         ).isInstanceOf(InvalidAuthSchemeException.class);
     }
 
@@ -56,12 +56,12 @@ public class AuthClientTest {
         AuthClient client = AuthClient.from(validOptions(DPoPMode.DISABLED));
 
         assertThatThrownBy(() ->
-                client.verifyRequest(Collections.emptyMap(), REQUEST)
+                client.verifyRequest(getHttpRequestInfo(new HashMap<>()))
         ).isInstanceOf(MissingAuthorizationException.class);
     }
 
     @Test
-    public void disabledMode_rejectsDpopScheme() {
+    public void disabledMode_rejectsDpopScheme() throws BaseAuthException {
         AuthClient client = AuthClient.from(validOptions(DPoPMode.DISABLED));
 
         Map<String, String> headers = new HashMap<>();
@@ -69,30 +69,32 @@ public class AuthClientTest {
         headers.put("dpop", "proof");
 
         assertThatThrownBy(() ->
-                client.verifyRequest(headers, REQUEST)
+                client.verifyRequest(getHttpRequestInfo(headers))
         ).isInstanceOf(BaseAuthException.class);
     }
 
     @Test
-    public void requiredMode_rejectsBearerScheme() {
+    public void requiredMode_rejectsBearerScheme() throws BaseAuthException {
         AuthClient client = AuthClient.from(validOptions(DPoPMode.REQUIRED));
 
-        Map<String, String> headers = Collections.singletonMap("authorization", "Bearer token");
+        Map<String, String> headers = new HashMap<>();
+        headers.put("authorization", "Bearer token");
+
 
         assertThatThrownBy(() ->
-                client.verifyRequest(headers, REQUEST)
+                client.verifyRequest(getHttpRequestInfo(headers))
         ).isInstanceOf(BaseAuthException.class);
     }
 
     @Test
-    public void requiredMode_rejectsMissingProof() {
+    public void requiredMode_rejectsMissingProof() throws BaseAuthException {
         AuthClient client = AuthClient.from(validOptions(DPoPMode.REQUIRED));
 
-        Map<String, String> headers = Collections.singletonMap("authorization", "DPoP token");
-
+        Map<String, String> headers = new HashMap<>();
+        headers.put("authorization", "DPoP token");
 
         assertThatThrownBy(() ->
-                client.verifyRequest(headers, REQUEST)
+                client.verifyRequest(getHttpRequestInfo(headers))
         ).isInstanceOf(BaseAuthException.class);
     }
 
@@ -102,5 +104,9 @@ public class AuthClientTest {
                 .audience("https://api.example.com")
                 .dpopMode(mode)
                 .build();
+    }
+
+    private HttpRequestInfo getHttpRequestInfo(Map<String, String> headers) throws BaseAuthException {
+        return new HttpRequestInfo("GET", "https://api.example.com/resource", headers);
     }
 }

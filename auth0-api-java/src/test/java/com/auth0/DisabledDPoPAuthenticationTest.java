@@ -3,6 +3,7 @@ package com.auth0;
 import com.auth0.exception.BaseAuthException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.AuthenticationContext;
+import com.auth0.models.HttpRequestInfo;
 import com.auth0.validators.JWTValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,17 +38,19 @@ public class DisabledDPoPAuthenticationTest {
         Map<String, String> normalizedHeaders = new HashMap<>();
         normalizedHeaders.put("authorization", "Bearer token");
 
-        when(jwtValidator.validateToken(eq("token"), eq(normalizedHeaders), any())).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("token"), any())).thenReturn(jwt);
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer token");
 
+        HttpRequestInfo request = new HttpRequestInfo(headers);
+
         when(jwt.getClaims()).thenReturn(new HashMap<>());
 
-        AuthenticationContext ctx = auth.authenticate(headers, null);
+        AuthenticationContext ctx = auth.authenticate(request);
 
 
         assertThat(ctx).isNotNull();
-        verify(jwtValidator).validateToken("token", normalizedHeaders, null);
+        verify(jwtValidator).validateToken("token", request);
     }
 
     @Test
@@ -57,8 +60,10 @@ public class DisabledDPoPAuthenticationTest {
 
         Map<String, String> headers = new HashMap<>();
 
+        HttpRequestInfo request = new HttpRequestInfo(headers);
+
         try {
-            auth.authenticate(headers, null);
+            auth.authenticate(request);
         } catch (BaseAuthException ex) {
             assertThat(ex.getHeaders())
                     .containsKey("WWW-Authenticate");

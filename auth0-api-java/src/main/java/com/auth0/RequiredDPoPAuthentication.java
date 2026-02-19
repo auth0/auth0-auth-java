@@ -20,19 +20,18 @@ class RequiredDPoPAuthentication extends AbstractAuthentication {
 
     /**
      * Authenticates the request when DPoP Mode is Allowed (Accepts only DPoP tokens) .
-     * @param headers request headers
      * @param requestInfo HTTP request info
      * @return AuthenticationContext with JWT claims
      * @throws BaseAuthException if validation fails
      */
     @Override
-    public AuthenticationContext authenticate(Map<String, String> headers, HttpRequestInfo requestInfo)
+    public AuthenticationContext authenticate(HttpRequestInfo requestInfo)
             throws BaseAuthException {
 
-        Map<String, String> normalizedHeader = normalize(headers);
+//        Map<String, String> normalizedHeader = normalize(requestInfo.getHeaders());
 
         try {
-            DecodedJWT decodedJWT = validateDpopTokenAndProof(normalizedHeader, requestInfo);
+            DecodedJWT decodedJWT = validateDpopTokenAndProof(requestInfo);
             return buildContext(decodedJWT);
         }
         catch (BaseAuthException ex){

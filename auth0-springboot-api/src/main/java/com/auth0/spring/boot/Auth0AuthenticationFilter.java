@@ -46,9 +46,9 @@ public class Auth0AuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            HttpRequestInfo requestInfo = extractRequestInfo(request);
+            HttpRequestInfo requestInfo = extractRequestInfo(request, headers);
 
-            AuthenticationContext ctx = authClient.verifyRequest(headers, requestInfo);
+            AuthenticationContext ctx = authClient.verifyRequest(requestInfo);
 
             Auth0AuthenticationToken authentication = new Auth0AuthenticationToken(ctx);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -116,9 +116,10 @@ public class Auth0AuthenticationFilter extends OncePerRequestFilter {
         return headers;
     }
 
-    HttpRequestInfo extractRequestInfo(HttpServletRequest request) {
+    HttpRequestInfo extractRequestInfo(HttpServletRequest request, Map<String, String> headers) throws BaseAuthException {
         String htu = buildHtu(request);
-        return new HttpRequestInfo(request.getMethod(), htu, null);
+
+        return new HttpRequestInfo(request.getMethod(), htu, headers);
     }
 
      static String buildHtu(HttpServletRequest request) {

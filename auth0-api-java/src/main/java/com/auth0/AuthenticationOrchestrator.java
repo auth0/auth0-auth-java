@@ -16,8 +16,8 @@ class AuthenticationOrchestrator {
         this.authStrategy = authStrategy;
     }
 
-    public AuthenticationContext process(Map<String, String> headers, HttpRequestInfo requestInfo)
+    public AuthenticationContext process(HttpRequestInfo requestInfo)
             throws BaseAuthException {
-        return authStrategy.authenticate(headers, requestInfo);
+        return authStrategy.authenticate(requestInfo);
     }
 }

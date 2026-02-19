@@ -2,6 +2,7 @@ package com.auth0.spring.boot;
 
 import com.auth0.AuthClient;
 import com.auth0.enums.DPoPMode;
+import com.auth0.exception.BaseAuthException;
 import com.auth0.exception.MissingAuthorizationException;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
@@ -18,9 +19,12 @@ import jakarta.servlet.FilterChain;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -191,14 +195,16 @@ class Auth0AuthenticationFilterTest {
 
     @Test
     @DisplayName("Should create HttpRequestInfo with GET method and built HTU")
-    void extractRequestInfo_shouldCreateHttpRequestInfo_withGetMethod() {
+    void extractRequestInfo_shouldCreateHttpRequestInfo_withGetMethod() throws BaseAuthException {
         request.setMethod("GET");
         request.setScheme("https");
         request.setServerName("api.example.com");
         request.setServerPort(443);
         request.setRequestURI("/api/users");
 
-        HttpRequestInfo requestInfo = filter.extractRequestInfo(request);
+        Map<String, String> headers = new HashMap<>();
+
+        HttpRequestInfo requestInfo = filter.extractRequestInfo(request, headers);
 
         assertNotNull(requestInfo);
         assertEquals("GET", requestInfo.getHttpMethod());
@@ -217,17 +223,15 @@ class Auth0AuthenticationFilterTest {
 
         AuthenticationContext mockContext = org.mockito.Mockito.mock(AuthenticationContext.class);
         when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
+                any(HttpRequestInfo.class)
         )).thenReturn(mockContext);
 
         filter.doFilterInternal(request, response, filterChain);
 
-        org.mockito.Mockito.verify(authClient).verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
+        verify(authClient).verifyRequest(
+                any(HttpRequestInfo.class)
         );
-        org.mockito.Mockito.verify(filterChain).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertTrue(SecurityContextHolder.getContext().getAuthentication() instanceof Auth0AuthenticationToken);
     }
@@ -244,14 +248,11 @@ class Auth0AuthenticationFilterTest {
         request.addHeader("DPoP", "dpop_proof_jwt");
 
         AuthenticationContext mockContext = org.mockito.Mockito.mock(AuthenticationContext.class);
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenReturn(mockContext);
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenReturn(mockContext);
 
         filter.doFilterInternal(request, response, filterChain);
 
-        org.mockito.Mockito.verify(filterChain).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -267,7 +268,7 @@ class Auth0AuthenticationFilterTest {
         filter.doFilterInternal(request, response, filterChain);
 
         assertEquals(200, response.getStatus());
-        org.mockito.Mockito.verify(filterChain).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -281,15 +282,12 @@ class Auth0AuthenticationFilterTest {
         request.setRequestURI("/api/users");
         request.addHeader("Authorization", "Bearer invalid_token");
 
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenThrow(new com.auth0.exception.VerifyAccessTokenException("Invalid JWT signature"));
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenThrow(new com.auth0.exception.VerifyAccessTokenException("Invalid JWT signature"));
 
         filter.doFilterInternal(request, response, filterChain);
 
         assertEquals(401, response.getStatus());
-        org.mockito.Mockito.verify(filterChain, org.mockito.Mockito.never()).doFilter(request, response);
+        verify(filterChain, org.mockito.Mockito.never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -303,15 +301,12 @@ class Auth0AuthenticationFilterTest {
         request.setRequestURI("/api/admin");
         request.addHeader("Authorization", "Bearer valid_token");
 
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenThrow(new com.auth0.exception.InsufficientScopeException("Insufficient scope"));
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenThrow(new com.auth0.exception.InsufficientScopeException("Insufficient scope"));
 
         filter.doFilterInternal(request, response, filterChain);
 
         assertEquals(403, response.getStatus());
-        org.mockito.Mockito.verify(filterChain, org.mockito.Mockito.never()).doFilter(request, response);
+        verify(filterChain, org.mockito.Mockito.never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -333,10 +328,7 @@ class Auth0AuthenticationFilterTest {
                 new com.auth0.exception.VerifyAccessTokenException("Token expired");
         exception.addHeader("WWW-Authenticate", "Bearer realm=\"api\", error=\"invalid_token\"");
 
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenThrow(exception);
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenThrow(exception);
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -359,10 +351,7 @@ class Auth0AuthenticationFilterTest {
         com.auth0.exception.VerifyAccessTokenException exception =
                 new com.auth0.exception.VerifyAccessTokenException("Malformed token");
 
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenThrow(exception);
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenThrow(exception);
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -383,10 +372,7 @@ class Auth0AuthenticationFilterTest {
         request.addHeader("Authorization", "Bearer valid_token");
 
         AuthenticationContext mockContext = org.mockito.Mockito.mock(AuthenticationContext.class);
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenReturn(mockContext);
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenReturn(mockContext);
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -414,10 +400,7 @@ class Auth0AuthenticationFilterTest {
                 new com.auth0.exception.InvalidDpopProofException("Invalid DPoP proof");
         exception.addHeader("WWW-Authenticate", "DPoP error=\"invalid_dpop_proof\"");
         
-        when(authClient.verifyRequest(
-                org.mockito.ArgumentMatchers.anyMap(),
-                org.mockito.ArgumentMatchers.any(HttpRequestInfo.class)
-        )).thenThrow(exception);
+        when(authClient.verifyRequest(any(HttpRequestInfo.class))).thenThrow(exception);
 
         filter.doFilterInternal(request, response, filterChain);
 

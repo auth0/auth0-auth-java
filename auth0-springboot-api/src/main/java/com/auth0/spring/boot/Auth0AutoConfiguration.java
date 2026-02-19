@@ -51,7 +51,7 @@ public class Auth0AutoConfiguration {
      * @param options the AuthOptions configuration for creating the client
      * @return AuthClient instance configured with the specified options
      * @see AuthClient#from(AuthOptions)
-     * @see AuthClient#verifyRequest(java.util.Map, com.auth0.models.HttpRequestInfo)
+     * @see AuthClient#verifyRequest(com.auth0.models.HttpRequestInfo)
      */
     @Bean
     @ConditionalOnMissingBean

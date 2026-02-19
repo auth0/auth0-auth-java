@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class AllowedDPoPAuthenticationTest {
@@ -48,39 +48,38 @@ public class AllowedDPoPAuthenticationTest {
                 new AuthToken("token", null, null)
         );
 
-        Map<String, String> normalizedHeaders = new HashMap<>();
-        normalizedHeaders.put("authorization", "Bearer token");
-
-        when(jwtValidator.validateToken(eq("token"), eq(normalizedHeaders), any())).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("token"), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer token");
 
-        AuthenticationContext ctx = auth.authenticate(headers, null);
+        HttpRequestInfo httpRequestInfo = new HttpRequestInfo("GET", "https://api.example.com", headers);
+
+        AuthenticationContext ctx = auth.authenticate(httpRequestInfo);
 
         assertThat(ctx).isNotNull();
-        verify(jwtValidator).validateToken("token", normalizedHeaders, null);
+        verify(jwtValidator).validateToken("token", httpRequestInfo);
         verifyNoInteractions(dpopProofValidator);
     }
 
     @Test
     public void authenticate_shouldAcceptDpopToken() throws Exception {
         DecodedJWT jwt = mock(DecodedJWT.class);
-        HttpRequestInfo request =
-                new HttpRequestInfo("GET", "https://api.example.com", null);
 
         when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.DPOP_SCHEME);
         when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
                 new com.auth0.models.AuthToken("token", "proof", null)
         );
-        when(jwtValidator.validateToken(eq("token"), anyMap(), any())).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("token"), any())).thenReturn(jwt);
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP token");
         headers.put("dpop", "proof");
 
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
+
         when(jwt.getClaims()).thenReturn(new HashMap<>());
 
-        AuthenticationContext ctx = auth.authenticate(headers, request);
+        AuthenticationContext ctx = auth.authenticate(request);
 
         assertThat(ctx).isNotNull();
         verify(dpopProofValidator).validate("proof", jwt, request);
@@ -93,7 +92,9 @@ public class AllowedDPoPAuthenticationTest {
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Basic abc");
 
-        auth.authenticate(headers, null);
+        HttpRequestInfo request = new HttpRequestInfo(headers);
+
+        auth.authenticate(request);
     }
 
     @Test
@@ -105,8 +106,10 @@ public class AllowedDPoPAuthenticationTest {
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer bad");
 
+        HttpRequestInfo request = new HttpRequestInfo(headers);
+
         try {
-            auth.authenticate(headers, null);
+            auth.authenticate(request);
         } catch (BaseAuthException ex) {
             assertThat(ex.getHeaders())
                     .containsKey("WWW-Authenticate");

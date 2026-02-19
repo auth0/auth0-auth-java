@@ -2,6 +2,7 @@ package com.auth0;
 
 import com.auth0.exception.BaseAuthException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.models.AuthToken;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
 import com.auth0.validators.DPoPProofValidator;
@@ -33,21 +34,21 @@ public class RequiredDPoPAuthenticationTest {
     @Test
     public void authenticate_shouldAcceptDpopToken() throws Exception {
         DecodedJWT jwt = mock(DecodedJWT.class);
-        HttpRequestInfo request =
-                new HttpRequestInfo("POST", "https://api.example.com", null);
-
-        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
-                new com.auth0.models.AuthToken("token", "proof", null)
-        );
-        when(jwtValidator.validateToken(eq("token"), anyMap(), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP token");
         headers.put("dpop", "proof");
 
+        HttpRequestInfo request = new HttpRequestInfo("POST", "https://api.example.com", headers);
+
+        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
+                new AuthToken("token", "proof", null)
+        );
+        when(jwtValidator.validateToken(eq("token"), any())).thenReturn(jwt);
+
         when(jwt.getClaims()).thenReturn(new HashMap<>());
 
-        AuthenticationContext ctx = auth.authenticate(headers, request);
+        AuthenticationContext ctx = auth.authenticate(request);
 
         assertThat(ctx).isNotNull();
         verify(dpopProofValidator).validate("proof", jwt, request);
@@ -55,15 +56,13 @@ public class RequiredDPoPAuthenticationTest {
 
     @Test
     public void authenticate_shouldWrapExceptionWithWwwAuthenticate() throws Exception {
-        HttpRequestInfo request =
-                new HttpRequestInfo("POST", "https://api.example.com", null);
+        Map<String, String> headers = new HashMap<>();
+        HttpRequestInfo request = new HttpRequestInfo("POST", "https://api.example.com", headers);
         when(extractor.extractDPoPProofAndDPoPToken(anyMap()))
                 .thenThrow(new com.auth0.exception.MissingAuthorizationException());
 
-        Map<String, String> headers = new HashMap<>();
-
         try {
-            auth.authenticate(headers, request);
+            auth.authenticate(request);
         } catch (BaseAuthException ex) {
             assertThat(ex.getHeaders())
                     .containsKey("WWW-Authenticate");

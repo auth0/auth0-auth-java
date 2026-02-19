@@ -17,18 +17,17 @@ class DisabledDPoPAuthentication extends AbstractAuthentication {
 
     /**
      * Authenticates the request when DPoP Mode is Disabled (Accepts only Bearer tokens) .
-     * @param headers request headers
      * @param requestInfo HTTP request info
      * @return AuthenticationContext with JWT claims
      * @throws BaseAuthException if validation fails
      */
     @Override
-    public AuthenticationContext authenticate(Map<String, String> headers, HttpRequestInfo requestInfo)
+    public AuthenticationContext authenticate(HttpRequestInfo requestInfo)
             throws BaseAuthException {
 
-        Map<String, String> normalizedHeader = normalize(headers);
+//        Map<String, String> normalizedHeader = normalize(requestInfo.getHeaders());
         try {
-            DecodedJWT jwt = validateBearerToken(normalizedHeader, requestInfo);
+            DecodedJWT jwt = validateBearerToken(requestInfo);
 
             return buildContext(jwt);
         } catch (BaseAuthException ex){

@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class AbstractAuthenticationTest {
@@ -38,7 +38,6 @@ public class AbstractAuthenticationTest {
 
         @Override
         public AuthenticationContext authenticate(
-                Map<String, String> headers,
                 HttpRequestInfo requestInfo) {
             return null;
         }
@@ -80,12 +79,12 @@ public class AbstractAuthenticationTest {
         DecodedJWT jwt = mock(DecodedJWT.class);
 
         when(extractor.extractBearer(anyMap())).thenReturn(token);
-        when(jwtValidator.validateToken(eq("access"), anyMap(), any())).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("access"), any(HttpRequestInfo.class))).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer access");
 
-        DecodedJWT result = authSystem.validateBearerToken(headers, null);
+        DecodedJWT result = authSystem.validateBearerToken(new HttpRequestInfo("GET", "https://api.example.com", headers));
 
         assertThat(result).isSameAs(jwt);
     }
@@ -94,17 +93,17 @@ public class AbstractAuthenticationTest {
     public void validateDpopTokenAndProof_shouldValidateEverything() throws Exception {
         AuthToken token = new AuthToken("access", "proof", null);
         DecodedJWT jwt = mock(DecodedJWT.class);
-        HttpRequestInfo request =
-                new HttpRequestInfo("GET", "https://api.example.com", null);
-
-        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(token);
-        when(jwtValidator.validateToken(eq("access"), anyMap(), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP access");
         headers.put("dpop", "proof");
 
-        DecodedJWT result = authSystem.validateDpopTokenAndProof(headers, request);
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
+
+        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(token);
+        when(jwtValidator.validateToken(eq("access"), any(HttpRequestInfo.class))).thenReturn(jwt);
+
+        DecodedJWT result = authSystem.validateDpopTokenAndProof(request);
 
         verify(dpopProofValidator).validate("proof", jwt, request);
         assertThat(result).isSameAs(jwt);

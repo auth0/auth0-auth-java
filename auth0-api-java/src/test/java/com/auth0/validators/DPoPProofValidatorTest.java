@@ -46,7 +46,7 @@ public class DPoPProofValidatorTest {
         requestInfo = new HttpRequestInfo(
                 "GET",
                 "https://api.example.com/resource",
-                null
+                new HashMap<>()
         );
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");

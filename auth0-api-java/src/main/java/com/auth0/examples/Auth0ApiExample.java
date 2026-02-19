@@ -97,16 +97,21 @@ public class Auth0ApiExample {
 
 
             // Build HttpRequestInfo (needed for DPoP htm + htu validation)
-            HttpRequestInfo requestInfo = new HttpRequestInfo(
-                    exchange.getRequestMethod(),
-                    "http://localhost:8000" + exchange.getRequestURI().toString(), null
-            );
+            HttpRequestInfo requestInfo = null;
+            try {
+                requestInfo = new HttpRequestInfo(
+                        exchange.getRequestMethod(),
+                        "http://localhost:8000" + exchange.getRequestURI().toString(), headers
+                );
+            } catch (BaseAuthException e) {
+                throw new RuntimeException(e);
+            }
 
             System.out.println("Incoming request to " + requestInfo.toString());
 
             try {
                 AuthenticationContext claims =
-                        authClient.verifyRequest(headers, requestInfo);
+                        authClient.verifyRequest(requestInfo);
 
                 String user = (String) claims.getClaims().get("sub");
 
