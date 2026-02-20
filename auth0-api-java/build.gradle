@@ -6,11 +6,8 @@ group = 'com.auth0'
 version = '1.0.0-SNAPSHOT'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-    withSourcesJar()
-    withJavadocJar()
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks.withType(Javadoc) {

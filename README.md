@@ -14,11 +14,10 @@ This repository contains multiple modules designed for different use cases:
 
 ### Core Modules
 
-| Module                                                                    | Description                                   | Java Version | Status           |
-| ------------------------------------------------------------------------- | --------------------------------------------- | ------------ | ---------------- |
-| **[auth0-api-java](./auth0-api-java/)**                                   | Core JWT validation library with DPoP support | Java 8+      | 🔒 **Internal**  |
-| **[auth0-springboot-api](./auth0-springboot-api/)**                       | Spring Boot auto-configuration and filters    | Java 17+     | 📦 **Published** |
-| **[auth0-springboot-api-playground](./auth0-springboot-api-playground/)** | Working example application                   | Java 17+     | Example          |
+| Module                                                                    | Description                                   | Java Version |
+| ------------------------------------------------------------------------- | --------------------------------------------- | ------------ |
+| **[auth0-springboot-api](./auth0-springboot-api/)**                       | Spring Boot auto-configuration and filters    | Java 17+     |
+| **[auth0-springboot-api-playground](./auth0-springboot-api-playground/)** | Working example application                   | Java 17+     |
 
 ### Module Relationship
 
@@ -67,9 +66,8 @@ This project uses Gradle with a multi-module setup:
 # Build all modules
 ./gradlew build
 
-# Build specific module
+# Build module
 ./gradlew :auth0-springboot-api:build
-./gradlew :auth0-api-java:build
 
 # Run tests
 ./gradlew test
@@ -85,7 +83,6 @@ Only the Spring Boot integration module is published as a public artifact:
 | Module                 | Group ID    | Artifact ID            | Version          | Status           |
 | ---------------------- | ----------- | ---------------------- | ---------------- | ---------------- |
 | `auth0-springboot-api` | `com.auth0` | `auth0-springboot-api` | `1.0.0-SNAPSHOT` | 📦 **Published** |
-| `auth0-api-java`       | `com.auth0` | `auth0-api-java`       | `1.0.0-SNAPSHOT` | 🔒 **Internal**  |
 
 The core library (`auth0-api-java`) is bundled as an internal dependency within the Spring Boot module and is not published separately.
 
