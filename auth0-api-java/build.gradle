@@ -21,7 +21,7 @@ dependencies {
     
     // JWT validation dependencies
     implementation 'com.auth0:java-jwt:4.4.0'
-    implementation 'com.auth0:jwks-rsa:0.22.1'
+    implementation 'com.auth0:jwks-rsa:0.23.0'
     
     // Test dependencies
     testImplementation 'junit:junit:4.13.2'
