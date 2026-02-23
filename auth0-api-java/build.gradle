@@ -20,7 +20,7 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     
     // JWT validation dependencies
-    implementation 'com.auth0:java-jwt:4.4.0'
+    implementation 'com.auth0:java-jwt:4.5.1'
     implementation 'com.auth0:jwks-rsa:0.22.1'
     
     // Test dependencies
