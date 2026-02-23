@@ -1,11 +1,13 @@
 package com.auth0.examples;
 
 import com.auth0.AuthClient;
+import com.auth0.DomainResolver;
 import com.auth0.enums.DPoPMode;
 import com.auth0.exception.BaseAuthException;
 import com.auth0.models.AuthOptions;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
+import com.auth0.models.RequestContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -13,7 +15,10 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Auth0ApiExample {
@@ -88,21 +93,18 @@ public class Auth0ApiExample {
 
             headers.put("authorization", auth);
 
-
             String dpopHeader = exchange.getRequestHeaders().getFirst("DPoP");
 
-            if(dpopHeader != null) {
+            if (dpopHeader != null) {
                 headers.put("DPoP", dpopHeader);
             }
-
 
             // Build HttpRequestInfo (needed for DPoP htm + htu validation)
             HttpRequestInfo requestInfo = null;
             try {
                 requestInfo = new HttpRequestInfo(
                         exchange.getRequestMethod(),
-                        "http://localhost:8000" + exchange.getRequestURI().toString(), headers
-                );
+                        "http://localhost:8000" + exchange.getRequestURI().toString(), headers);
             } catch (BaseAuthException e) {
                 throw new RuntimeException(e);
             }
@@ -110,8 +112,7 @@ public class Auth0ApiExample {
             System.out.println("Incoming request to " + requestInfo.toString());
 
             try {
-                AuthenticationContext claims =
-                        authClient.verifyRequest(requestInfo);
+                AuthenticationContext claims = authClient.verifyRequest(requestInfo);
 
                 String user = (String) claims.getClaims().get("sub");
 

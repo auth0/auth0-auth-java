@@ -11,7 +11,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.*;
 
 public class AuthenticationOrchestratorTest {
@@ -51,7 +50,7 @@ public class AuthenticationOrchestratorTest {
         Map<String, String> headers = new HashMap<>();
 
         assertThatThrownBy(() ->
-                orchestrator.process(new HttpRequestInfo(headers))
+                orchestrator.process(new HttpRequestInfo("GET", "https://api", headers))
         ).isSameAs(ex);
     }
 }

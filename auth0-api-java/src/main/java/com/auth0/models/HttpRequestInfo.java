@@ -1,5 +1,6 @@
 package com.auth0.models;
 
+import com.auth0.exception.BaseAuthException;
 import com.auth0.exception.InvalidRequestException;
 import org.apache.http.util.Asserts;
 
@@ -14,7 +15,7 @@ public class HttpRequestInfo {
     public HttpRequestInfo(String httpMethod, String httpUrl, Map<String, String> headers) throws InvalidRequestException {
         Asserts.notNull(headers, "Headers map cannot be null");
 
-        this.httpMethod = httpMethod != null ? httpMethod.toUpperCase() : null;
+        this.httpMethod = httpMethod.toUpperCase();
         this.httpUrl = httpUrl;
         this.headers = normalize(headers);
     }

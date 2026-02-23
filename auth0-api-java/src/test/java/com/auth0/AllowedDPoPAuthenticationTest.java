@@ -16,7 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 public class AllowedDPoPAuthenticationTest {
@@ -36,48 +39,42 @@ public class AllowedDPoPAuthenticationTest {
     @Test
     public void authenticate_shouldAcceptBearerToken() throws Exception {
         DecodedJWT jwt = mock(DecodedJWT.class);
-
-        Claim claim = mock(Claim.class);
-
-        when(claim.isNull()).thenReturn(true);
-        when(jwt.getClaim("cnf")).thenReturn(claim);
+        Claim cnfClaim = mock(Claim.class);
+        when(cnfClaim.isNull()).thenReturn(true);
+        when(cnfClaim.asMap()).thenReturn(null);
+        when(jwt.getClaim("cnf")).thenReturn(cnfClaim);
         when(jwt.getClaims()).thenReturn(new HashMap<>());
-
-        when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.BEARER_SCHEME);
-        when(extractor.extractBearer(anyMap())).thenReturn(
-                new AuthToken("token", null, null)
-        );
-
-        when(jwtValidator.validateToken(eq("token"), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer token");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
 
-        HttpRequestInfo httpRequestInfo = new HttpRequestInfo("GET", "https://api.example.com", headers);
+        when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.BEARER_SCHEME);
+        when(extractor.extractBearer(anyMap())).thenReturn(
+                new AuthToken("token", null, null));
+        when(jwtValidator.validateToken(eq("token"), any(HttpRequestInfo.class))).thenReturn(jwt);
 
-        AuthenticationContext ctx = auth.authenticate(httpRequestInfo);
+        AuthenticationContext ctx = auth.authenticate(request);
 
         assertThat(ctx).isNotNull();
-        verify(jwtValidator).validateToken("token", httpRequestInfo);
+        verify(jwtValidator).validateToken(eq("token"), any(HttpRequestInfo.class));
         verifyNoInteractions(dpopProofValidator);
     }
 
     @Test
     public void authenticate_shouldAcceptDpopToken() throws Exception {
         DecodedJWT jwt = mock(DecodedJWT.class);
+        when(jwt.getClaims()).thenReturn(new HashMap<>());
 
-        when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.DPOP_SCHEME);
-        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
-                new com.auth0.models.AuthToken("token", "proof", null)
-        );
-        when(jwtValidator.validateToken(eq("token"), any())).thenReturn(jwt);
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP token");
         headers.put("dpop", "proof");
-
         HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
 
-        when(jwt.getClaims()).thenReturn(new HashMap<>());
+        when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.DPOP_SCHEME);
+        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(
+                new AuthToken("token", "proof", null));
+        when(jwtValidator.validateToken(eq("token"), any(HttpRequestInfo.class))).thenReturn(jwt);
 
         AuthenticationContext ctx = auth.authenticate(request);
 
@@ -85,16 +82,15 @@ public class AllowedDPoPAuthenticationTest {
         verify(dpopProofValidator).validate("proof", jwt, request);
     }
 
-    @Test(expected = InvalidAuthSchemeException.class)
+    @Test
     public void authenticate_shouldRejectUnknownScheme() throws Exception {
         when(extractor.getScheme(anyMap())).thenReturn("basic");
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Basic abc");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
 
-        HttpRequestInfo request = new HttpRequestInfo(headers);
-
-        auth.authenticate(request);
+        assertThatThrownBy(() -> auth.authenticate(request)).isInstanceOf(InvalidAuthSchemeException.class);
     }
 
     @Test
@@ -105,8 +101,7 @@ public class AllowedDPoPAuthenticationTest {
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer bad");
-
-        HttpRequestInfo request = new HttpRequestInfo(headers);
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
 
         try {
             auth.authenticate(request);
@@ -114,5 +109,66 @@ public class AllowedDPoPAuthenticationTest {
             assertThat(ex.getHeaders())
                     .containsKey("WWW-Authenticate");
         }
+    }
+
+    @Test
+    public void authenticate_shouldRejectBearerWithDpopProofPresent() throws Exception {
+        DecodedJWT jwt = mock(DecodedJWT.class);
+        Claim cnfClaim = mock(Claim.class);
+        when(cnfClaim.isNull()).thenReturn(true);
+        when(cnfClaim.asMap()).thenReturn(null);
+        when(jwt.getClaim("cnf")).thenReturn(cnfClaim);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("authorization", "Bearer token");
+        headers.put("dpop", "proof");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
+
+        when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.BEARER_SCHEME);
+        when(extractor.extractBearer(anyMap())).thenReturn(
+                new AuthToken("token", null, null));
+        when(jwtValidator.validateToken(eq("token"), any(HttpRequestInfo.class))).thenReturn(jwt);
+
+        assertThatThrownBy(() -> auth.authenticate(request))
+                .isInstanceOf(BaseAuthException.class);
+    }
+
+    @Test
+    public void authenticate_shouldRejectBearerWithDpopBoundToken() throws Exception {
+        DecodedJWT jwt = mock(DecodedJWT.class);
+        Claim cnfClaim = mock(Claim.class);
+        Map<String, Object> cnfMap = new HashMap<>();
+        cnfMap.put("jkt", "thumbprint");
+        when(cnfClaim.isNull()).thenReturn(false);
+        when(cnfClaim.asMap()).thenReturn(cnfMap);
+        when(jwt.getClaim("cnf")).thenReturn(cnfClaim);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("authorization", "Bearer token");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
+
+        when(extractor.getScheme(anyMap())).thenReturn(AuthConstants.BEARER_SCHEME);
+        when(extractor.extractBearer(anyMap())).thenReturn(
+                new AuthToken("token", null, null));
+        when(jwtValidator.validateToken(eq("token"), any(HttpRequestInfo.class))).thenReturn(jwt);
+
+        assertThatThrownBy(() -> auth.authenticate(request))
+                .isInstanceOf(BaseAuthException.class);
+    }
+
+    @Test
+    public void authenticate_emptyScheme_shouldWrapWithWwwAuthenticate() throws Exception {
+        when(extractor.getScheme(anyMap())).thenReturn("");
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("authorization", "");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
+
+        assertThatThrownBy(() -> auth.authenticate(request))
+                .isInstanceOf(BaseAuthException.class)
+                .satisfies(ex -> {
+                    BaseAuthException bae = (BaseAuthException) ex;
+                    assertThat(bae.getHeaders()).containsKey("WWW-Authenticate");
+                });
     }
 }

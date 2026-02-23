@@ -1,5 +1,6 @@
 package com.auth0.validators;
 
+import com.auth0.cache.InMemoryAuthCache;
 import com.auth0.exception.InsufficientScopeException;
 import com.auth0.exception.InvalidRequestException;
 import com.auth0.exception.MissingRequiredArgumentException;
@@ -11,6 +12,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.AuthOptions;
 import com.auth0.models.HttpRequestInfo;
+import com.auth0.models.OidcMetadata;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -25,6 +27,7 @@ import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class JWTValidatorTest {
@@ -42,6 +45,7 @@ public class JWTValidatorTest {
     private static final String DOMAIN = "test-domain.auth0.com";
     private static final String AUDIENCE = "https://api.example.com";
     private static final String ISSUER = "https://test-domain.auth0.com/";
+    private static final String JWKS_URI = "https://test-domain.auth0.com/.well-known/jwks.json";
 
     @Before
     public void setUp() throws Exception {
@@ -53,12 +57,23 @@ public class JWTValidatorTest {
         publicKey = (RSAPublicKey) pair.getPublic();
         privateKey = (RSAPrivateKey) pair.getPrivate();
 
+        // Create a cache and pre-populate it with the mock JwkProvider
+        InMemoryAuthCache<Object> cache = new InMemoryAuthCache<>();
+        cache.put(JWTValidator.JWKS_CACHE_PREFIX + JWKS_URI, jwkProvider);
+
         AuthOptions options = new AuthOptions.Builder()
                 .domain(DOMAIN)
                 .audience(AUDIENCE)
+                .cache(cache)
                 .build();
 
-        validator = new JWTValidator(options, jwkProvider);
+        // Mock OidcDiscoveryFetcher to return metadata matching the token issuer
+        OidcDiscoveryFetcher mockDiscoveryFetcher = mock(OidcDiscoveryFetcher.class);
+        when(mockDiscoveryFetcher.fetch(anyString()))
+                .thenReturn(new OidcMetadata(ISSUER, JWKS_URI));
+
+        // Use the package-private 3-arg constructor for full control
+        validator = new JWTValidator(options, jwkProvider, mockDiscoveryFetcher);
 
         when(jwk.getPublicKey()).thenReturn(publicKey);
         when(jwkProvider.get(anyString())).thenReturn(jwk);
