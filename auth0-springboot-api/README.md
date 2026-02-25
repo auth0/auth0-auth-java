@@ -11,7 +11,6 @@ This library builds on top of the standard Spring Security JWT authentication, p
 
 ## Requirements
 
-- This library currently supports **Java 8+** for core functionality
 - **Spring Boot 3.2+** (requires Java 17+) for Spring Boot integration
 
 ## Getting Started
@@ -24,7 +23,7 @@ Add the dependency via Maven:
 <dependency>
     <groupId>com.auth0</groupId>
     <artifactId>auth0-springboot-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.0-beta.0</version>
 </dependency>
 ```
 
@@ -32,7 +31,7 @@ or Gradle:
 
 ```gradle
 dependencies {
-    implementation 'com.auth0:auth0-springboot-api:1.0.0'
+    implementation 'com.auth0:auth0-springboot-api:1.0.0-beta.0'
 }
 ```
 
@@ -175,49 +174,6 @@ curl -H "Authorization: DPoP <jwt_token>" \
 ```
 
 ## Advanced Features
-
-### Manual JWT Validation
-
-For scenarios requiring manual token validation, inject and use the `AuthClient`:
-
-```java
-@RestController
-public class CustomController {
-
-    @Autowired
-    private AuthClient authClient;
-
-    @PostMapping("/api/custom-validation")
-    public ResponseEntity<String> customValidation(HttpServletRequest request) {
-        try {
-            // Extract headers and request info
-            Map<String, String> headers = extractHeaders(request);
-            HttpRequestInfo requestInfo = new HttpRequestInfo(
-                request.getMethod(),
-                request.getRequestURL().toString(),
-                null
-            );
-
-            // Manual validation
-            AuthenticationContext context = authClient.verifyRequest(headers, requestInfo);
-            String userId = (String) context.getClaims().get("sub");
-
-            return ResponseEntity.ok("Token valid for user: " + userId);
-
-        } catch (BaseAuthException e) {
-            return ResponseEntity.status(401).body("Authentication failed: " + e.getMessage());
-        }
-    }
-
-    private Map<String, String> extractHeaders(HttpServletRequest request) {
-        Map<String, String> headers = new HashMap<>();
-        Collections.list(request.getHeaderNames()).forEach(headerName ->
-            headers.put(headerName, request.getHeader(headerName))
-        );
-        return headers;
-    }
-}
-```
 
 ### Custom Claim Validation
 
