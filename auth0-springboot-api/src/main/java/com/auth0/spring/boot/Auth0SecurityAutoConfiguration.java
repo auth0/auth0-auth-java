@@ -10,9 +10,10 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnClass(AuthClient.class)
 public class Auth0SecurityAutoConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean
-    public Auth0AuthenticationFilter authAuthenticationFilter(AuthClient authClient, Auth0Properties auth0Properties) {
-        return new Auth0AuthenticationFilter(authClient, auth0Properties);
-    }
+  @Bean
+  @ConditionalOnMissingBean
+  public Auth0AuthenticationFilter authAuthenticationFilter(
+      AuthClient authClient, Auth0Properties auth0Properties) {
+    return new Auth0AuthenticationFilter(authClient, auth0Properties);
+  }
 }
