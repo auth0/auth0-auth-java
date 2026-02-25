@@ -20,14 +20,14 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     
     // JWT validation dependencies
-    implementation 'com.auth0:java-jwt:4.4.0'
-    implementation 'com.auth0:jwks-rsa:0.22.1'
+    implementation 'com.auth0:java-jwt:4.5.1'
+    implementation 'com.auth0:jwks-rsa:0.23.0'
     
     // Test dependencies
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.hamcrest:hamcrest:2.2'
     testImplementation 'org.mockito:mockito-core:4.11.0'
-    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
 }
 
 repositories {
