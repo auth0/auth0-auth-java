@@ -11,16 +11,20 @@ task('javadocJar', type: Jar, dependsOn: javadoc) {
   from javadoc.getDestinationDir()
 }
 
-tasks.withType(Javadoc).configureEach {
-  javadocTool = javaToolchains.javadocToolFor {
-    // Use latest JDK for javadoc generation
-    languageVersion = JavaLanguageVersion.of(17)
+// Configure javadoc toolchain only for modules where javadoc is enabled
+if (tasks.findByName('javadoc')?.enabled != false) {
+  tasks.withType(Javadoc).configureEach {
+    javadocTool = javaToolchains.javadocToolFor {
+      languageVersion = JavaLanguageVersion.of(17)
+    }
   }
-}
 
-javadoc {
-  // Specify the Java version that the project will use
-  options.addStringOption('-release', "17")
+  javadoc {
+    options.addStringOption('-release', "17")
+    if(JavaVersion.current().isJava9Compatible()) {
+      options.addBooleanOption('html5', true)
+    }
+  }
 }
 
 artifacts {
