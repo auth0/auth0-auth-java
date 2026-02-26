@@ -6,6 +6,8 @@ This library builds on top of the standard Spring Security JWT authentication, p
 
 - **Complete Spring Security JWT Functionality** - All features from Spring Security JWT Bearer are available
 - **Built-in DPoP Support** - Industry-leading proof-of-possession token security per [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)
+- **Multi-Custom Domain (MCD) Support** - Validate tokens from multiple Auth0 custom domains with static lists or dynamic resolution
+- **Extensible Caching** - Pluggable `AuthCache` interface for OIDC discovery and JWKS caching with distributed backend support (Redis, Memcached)
 - **Auto-Configuration** - Spring Boot auto-configuration with minimal setup
 - **Flexible Authentication Modes** - Bearer-only, DPoP-only, or flexible mode supporting both
 
@@ -172,6 +174,146 @@ curl -H "Authorization: Bearer <jwt_token>" \
 curl -H "Authorization: DPoP <jwt_token>" \
      -H "DPoP: <dpop_proof>" \
      https://your-api.example.com/api/protected
+```
+
+## Multi-Custom Domain (MCD) Support
+
+For tenants with multiple custom domains, the SDK can validate tokens from any of the configured issuers. There are three ways to configure domain resolution:
+
+### Option 1: Static Domain List
+
+Configure a list of allowed issuer domains in `application.yml`:
+
+```yaml
+auth0:
+  audience: "https://your-api-identifier"
+  domains:
+    - "login.acme.com"
+    - "auth.partner.com"
+    - "dev.example.com"
+```
+
+You can also set a primary domain alongside the list:
+
+```yaml
+auth0:
+  domain: "primary.auth0.com"
+  audience: "https://your-api-identifier"
+  domains:
+    - "login.acme.com"
+    - "auth.partner.com"
+```
+
+### Option 2: Dynamic Domain Resolver
+
+For scenarios where the allowed issuers depend on runtime context (e.g., tenant headers, database lookups), define a `DomainResolver` bean:
+
+```java
+import com.auth0.DomainResolver;
+
+@Configuration
+public class McdConfig {
+
+    @Bean
+    public DomainResolver domainResolver(TenantService tenantService) {
+        return context -> {
+            // context.getHeaders() — request headers (lowercase keys)
+            // context.getUrl() — the API request URL
+            // context.getTokenIssuer() — unverified iss claim (routing hint only)
+            String tenantId = context.getHeaders().get("x-tenant-id");
+            String domain = tenantService.getDomain(tenantId);
+            return Collections.singletonList(domain);
+        };
+    }
+}
+```
+
+When a `DomainResolver` bean is present, it takes precedence over the static `auth0.domains` list. The single `auth0.domain` can still coexist as a fallback.
+
+### Option 3: Single Domain (Default)
+
+For single-tenant setups, just use the `auth0.domain` property:
+
+```yaml
+auth0:
+  domain: "your-tenant.auth0.com"
+  audience: "https://your-api-identifier"
+```
+
+## Extensibility
+
+### Custom Cache Implementation
+
+The SDK caches OIDC discovery metadata and JWKS providers using a unified cache with key prefixes (`discovery:{issuerUrl}` and `jwks:{jwksUri}`). By default, it uses a thread-safe in-memory LRU cache.
+
+You can replace this with a distributed cache (Redis, Memcached, etc.) by implementing the `AuthCache` interface:
+
+```java
+import com.auth0.AuthCache;
+
+public class RedisAuthCache implements AuthCache<Object> {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final Duration ttl;
+
+    public RedisAuthCache(RedisTemplate<String, Object> redisTemplate, Duration ttl) {
+        this.redisTemplate = redisTemplate;
+        this.ttl = ttl;
+    }
+
+    @Override
+    public Object get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    @Override
+    public void put(String key, Object value) {
+        redisTemplate.opsForValue().set(key, value, ttl);
+    }
+
+    @Override
+    public void remove(String key) {
+        redisTemplate.delete(key);
+    }
+
+    @Override
+    public void clear() {
+        Set<String> keys = redisTemplate.keys("discovery:*");
+        if (keys != null) redisTemplate.delete(keys);
+        keys = redisTemplate.keys("jwks:*");
+        if (keys != null) redisTemplate.delete(keys);
+    }
+
+    @Override
+    public int size() {
+        return 0; // approximate
+    }
+}
+```
+
+Then define it as a Spring bean — the auto-configuration picks it up automatically and wires it into `AuthOptions`. No need to create your own `AuthClient` bean:
+
+```java
+@Configuration
+public class CacheConfig {
+
+    @Bean
+    public AuthCache<Object> authCache(RedisTemplate<String, Object> redisTemplate) {
+        return new RedisAuthCache(redisTemplate, Duration.ofMinutes(10));
+    }
+}
+```
+
+When an `AuthCache` bean is present, the `cacheMaxEntries` and `cacheTtlSeconds` YAML properties are ignored — your implementation controls its own eviction and TTL.
+
+### Default Cache Settings
+
+If no custom cache is provided, the built-in in-memory cache is used with these defaults:
+
+```yaml
+auth0:
+  cacheMaxEntries: 100   # max entries before LRU eviction
+  cacheTtlSeconds: 600   # 10-minute TTL per entry
 ```
 
 ## Advanced Features
