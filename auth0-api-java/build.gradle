@@ -5,7 +5,7 @@ plugins {
 ext {
     POM_ARTIFACT_ID = 'auth0-api-java'
     POM_NAME = 'auth0-api-java'
-    POM_DESCRIPTION = 'Auth0 Java Authentication and Authorization Library'
+    POM_DESCRIPTION = 'Auth0 Java API Library'
     POM_PACKAGING = 'jar'
 }
 
