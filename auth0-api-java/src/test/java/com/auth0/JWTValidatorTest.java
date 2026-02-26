@@ -1,6 +1,5 @@
-package com.auth0.validators;
+package com.auth0;
 
-import com.auth0.cache.InMemoryAuthCache;
 import com.auth0.exception.InsufficientScopeException;
 import com.auth0.exception.InvalidRequestException;
 import com.auth0.exception.MissingRequiredArgumentException;

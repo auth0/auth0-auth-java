@@ -1,7 +1,5 @@
-package com.auth0.validators;
+package com.auth0;
 
-import com.auth0.cache.AuthCache;
-import com.auth0.cache.InMemoryAuthCache;
 import com.auth0.exception.BaseAuthException;
 import com.auth0.exception.MissingRequiredArgumentException;
 import com.auth0.exception.VerifyAccessTokenException;
@@ -17,6 +15,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.HttpRequestInfo;
 import com.auth0.models.RequestContext;
+import com.auth0.OidcDiscoveryFetcher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,7 +31,7 @@ import java.util.stream.Collectors;
  * algorithm
  * and JWKS (JSON Web Key Set) for public key retrieval.
  */
-public class JWTValidator {
+class JWTValidator {
 
     static final String JWKS_CACHE_PREFIX = "jwks:";
 
@@ -47,7 +46,7 @@ public class JWTValidator {
      *
      * @param authOptions Authentication options containing domain and audience
      */
-    public JWTValidator(AuthOptions authOptions) {
+     JWTValidator(AuthOptions authOptions) {
         if (authOptions == null) {
             throw new IllegalArgumentException("AuthOptions cannot be null");
         }
@@ -66,7 +65,7 @@ public class JWTValidator {
      * @param authOptions Authentication options containing domain and audience
      * @param jwkProvider Custom JwkProvider for key retrieval
      */
-    public JWTValidator(AuthOptions authOptions, JwkProvider jwkProvider) {
+    JWTValidator(AuthOptions authOptions, JwkProvider jwkProvider) {
         if (authOptions == null) {
             throw new IllegalArgumentException("AuthOptions cannot be null");
         }
@@ -117,7 +116,7 @@ public class JWTValidator {
      * @return the decoded and verified JWT
      * @throws BaseAuthException if validation fails
      */
-    public DecodedJWT validateToken(String token, HttpRequestInfo httpRequestInfo) throws BaseAuthException {
+     public DecodedJWT validateToken(String token, HttpRequestInfo httpRequestInfo) throws BaseAuthException {
 
         if (token == null || token.trim().isEmpty()) {
             throw new MissingRequiredArgumentException("access_token");
@@ -167,7 +166,7 @@ public class JWTValidator {
     /**
      * Validates a JWT and ensures all required scopes are present.
      */
-    public DecodedJWT validateTokenWithRequiredScopes(String token, HttpRequestInfo httpRequestInfo, String... requiredScopes) throws BaseAuthException {
+     DecodedJWT validateTokenWithRequiredScopes(String token, HttpRequestInfo httpRequestInfo, String... requiredScopes) throws BaseAuthException {
         DecodedJWT jwt = validateToken(token, httpRequestInfo);
         try {
             ClaimValidator.checkRequiredScopes(jwt, requiredScopes);

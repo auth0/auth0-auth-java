@@ -1,6 +1,7 @@
 package com.auth0.spring.boot;
 
 import com.auth0.AuthClient;
+import com.auth0.DomainResolver;
 import com.auth0.models.AuthOptions;
 import com.auth0.enums.DPoPMode;
 import org.junit.jupiter.api.DisplayName;
@@ -237,7 +238,7 @@ class Auth0AutoConfigurationTest {
         @TestConfiguration
         static class TestConfig {
             @Bean
-            public Auth0DomainResolver testDomainResolver() {
+            public DomainResolver testDomainResolver() {
                 return context -> {
                     String tenant = context.getHeaders().get("x-tenant-id");
                     if ("acme".equals(tenant)) {
@@ -252,7 +253,7 @@ class Auth0AutoConfigurationTest {
         private AuthOptions authOptions;
 
         @Test
-        @DisplayName("Should use Auth0DomainResolver bean when present, taking priority over domains list")
+        @DisplayName("Should use DomainResolver bean when present, taking priority over domains list")
         void shouldUseResolverBeanWhenPresent() {
             assertNotNull(authOptions);
             // When a resolver is present, domainsResolver should be set
@@ -284,7 +285,7 @@ class Auth0AutoConfigurationTest {
         @TestConfiguration
         static class TestConfig {
             @Bean
-            public Auth0DomainResolver testDomainResolver() {
+            public DomainResolver testDomainResolver() {
                 return context -> Collections.singletonList("dynamic.auth0.com");
             }
         }
@@ -293,7 +294,7 @@ class Auth0AutoConfigurationTest {
         private AuthOptions authOptions;
 
         @Test
-        @DisplayName("Should prioritize Auth0DomainResolver over static domains list")
+        @DisplayName("Should prioritize DomainResolver over static domains list")
         void shouldPrioritizeResolverOverStaticDomains() {
             assertNotNull(authOptions);
             // Resolver should win over static domains

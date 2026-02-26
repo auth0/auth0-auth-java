@@ -5,10 +5,6 @@ import com.auth0.exception.BaseAuthException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
-import com.auth0.validators.DPoPProofValidator;
-import com.auth0.validators.JWTValidator;
-
-import java.util.Map;
 
 class RequiredDPoPAuthentication extends AbstractAuthentication {
 

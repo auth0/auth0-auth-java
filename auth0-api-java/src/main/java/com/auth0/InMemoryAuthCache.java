@@ -1,4 +1,4 @@
-package com.auth0.cache;
+package com.auth0;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

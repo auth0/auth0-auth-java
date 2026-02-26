@@ -1,5 +1,6 @@
 package com.auth0.cache;
 
+import com.auth0.InMemoryAuthCache;
 import org.junit.Before;
 import org.junit.Test;
 

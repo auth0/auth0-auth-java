@@ -1,5 +1,6 @@
 package com.auth0.spring.boot;
 
+import com.auth0.AuthCache;
 import com.auth0.AuthClient;
 import com.auth0.DomainResolver;
 import com.auth0.models.AuthOptions;
@@ -16,18 +17,18 @@ import org.springframework.context.annotation.Bean;
  * <ol>
  * <li><b>Single domain</b> — set {@code auth0.domain} in YAML</li>
  * <li><b>Static MCD list</b> — set {@code auth0.domains} in YAML</li>
- * <li><b>Dynamic resolver</b> — define an {@link Auth0DomainResolver} bean</li>
+ * <li><b>Dynamic resolver</b> — define a {@link DomainResolver} bean</li>
  * </ol>
  *
  * Dynamic Domain Resolver
  * <p>
  * To dynamically resolve allowed issuer domains at request time, define a bean
- * implementing {@link Auth0DomainResolver}:
+ * implementing {@link DomainResolver}:
  * </p>
- * 
+ *
  * <pre>{@code
  * @Bean
- * public Auth0DomainResolver domainResolver() {
+ * public DomainResolver domainResolver() {
  *     return context -> {
  *         String tenantId = context.getHeaders().get("x-tenant-id");
  *         return lookupDomainsForTenant(tenantId);
@@ -43,35 +44,33 @@ public class Auth0AutoConfiguration {
      * Creates an {@link AuthOptions} bean from {@link Auth0Properties}.
      * <p>
      * Builds the authentication options configuration.
-     * 
+     *
      * @param properties             the Auth0 configuration properties from
      *                               application configuration
-     * @param domainResolverProvider optional {@link Auth0DomainResolver} bean
+     * @param domainResolverProvider optional {@link DomainResolver} bean
      *                               for dynamic MCD resolution. When present,
      *                               it takes precedence over static YAML config.
+     * @param cacheProvider          optional {@link AuthCache} bean for custom
+     *                               caching (e.g., Redis). When present,
+     *                               {@code cacheMaxEntries} and {@code cacheTtlSeconds}
+     *                               properties are ignored.
      * @return configured AuthOptions instance for creating AuthClient
      * @see AuthOptions.Builder
      * @see Auth0Properties
      */
     @Bean
     public AuthOptions authOptions(Auth0Properties properties,
-            ObjectProvider<Auth0DomainResolver> domainResolverProvider) {
+            ObjectProvider<DomainResolver> domainResolverProvider,
+            ObjectProvider<AuthCache<Object>> cacheProvider) {
 
-        Auth0DomainResolver auth0DomainResolver = domainResolverProvider.getIfAvailable();
+        DomainResolver domainResolver = domainResolverProvider.getIfAvailable();
+        AuthCache<Object> cache = cacheProvider.getIfAvailable();
 
         AuthOptions.Builder builder = new AuthOptions.Builder()
                 .audience(properties.getAudience());
 
-        if (auth0DomainResolver != null) {
-            // Bridge Spring Boot's Auth0DomainResolver → core DomainResolver
-            DomainResolver coreDomainResolver = coreContext -> {
-                Auth0RequestContext springContext = new Auth0RequestContext(
-                        coreContext.getUrl(),
-                        coreContext.getHeaders(),
-                        coreContext.getTokenIssuer());
-                return auth0DomainResolver.resolveDomains(springContext);
-            };
-            builder.domainsResolver(coreDomainResolver);
+        if (domainResolver != null) {
+            builder.domainsResolver(domainResolver);
 
             if (properties.getDomain() != null && !properties.getDomain().isEmpty()) {
                 builder.domain(properties.getDomain());
@@ -96,11 +95,15 @@ public class Auth0AutoConfiguration {
             builder.dpopIatOffsetSeconds(properties.getDpopIatOffsetSeconds());
         }
 
-        if (properties.getCacheMaxEntries() != null) {
-            builder.cacheMaxEntries(properties.getCacheMaxEntries());
-        }
-        if (properties.getCacheTtlSeconds() != null) {
-            builder.cacheTtlSeconds(properties.getCacheTtlSeconds());
+        if (cache != null) {
+            builder.cache(cache);
+        } else {
+            if (properties.getCacheMaxEntries() != null) {
+                builder.cacheMaxEntries(properties.getCacheMaxEntries());
+            }
+            if (properties.getCacheTtlSeconds() != null) {
+                builder.cacheTtlSeconds(properties.getCacheTtlSeconds());
+            }
         }
 
         return builder.build();

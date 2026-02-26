@@ -7,8 +7,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.AuthToken;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
-import com.auth0.validators.DPoPProofValidator;
-import com.auth0.validators.JWTValidator;
 
 import java.util.HashMap;
 import java.util.List;

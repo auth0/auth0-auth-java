@@ -1,6 +1,5 @@
-package com.auth0.validators;
+package com.auth0;
 
-import com.auth0.cache.AuthCache;
 import com.auth0.exception.VerifyAccessTokenException;
 import com.auth0.models.OidcMetadata;
 import com.fasterxml.jackson.databind.JsonNode;

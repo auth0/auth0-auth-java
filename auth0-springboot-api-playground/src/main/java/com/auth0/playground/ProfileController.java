@@ -30,7 +30,7 @@ public class ProfileController {
      * demonstrates that the same controller works seamlessly with
      * Multi-Custom Domain configurations.
      * <p>
-     * When an {@link com.auth0.spring.boot.Auth0DomainResolver} bean is
+     * When a {@link com.auth0.DomainResolver} bean is
      * defined, the SDK resolves the allowed issuer domains dynamically.
      * This endpoint does not need any MCD-specific code.
      * </p>
