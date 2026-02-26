@@ -1,4 +1,4 @@
-package com.auth0.validators;
+package com.auth0;
 
 import com.auth0.exception.BaseAuthException;
 import com.auth0.exception.InsufficientScopeException;

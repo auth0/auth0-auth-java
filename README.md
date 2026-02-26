@@ -6,7 +6,7 @@
 ![Java Version](https://img.shields.io/badge/java-8%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A comprehensive Java library for Auth0 JWT authentication with built-in **DPoP (Demonstration of Proof-of-Possession)** support. This multi-module project provides both a core authentication library and Spring Boot integration for secure API development.
+A comprehensive Java library for Auth0 JWT authentication with built-in **DPoP (Demonstration of Proof-of-Possession)** and **Multi-Custom Domain (MCD)** support. This project provides both a core authentication library and Spring Boot integration for secure API development.
 
 ## 🏗️ Architecture Overview
 
@@ -49,6 +49,8 @@ The core library (`auth0-api-java`) is currently an internal module used by the 
 
 - JWT validation with Auth0 JWKS integration
 - DPoP proof validation per [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)
+- Multi-Custom Domain (MCD) support — static domain lists, or dynamic resolution at request time
+- Extensible caching — pluggable `AuthCache` interface for distributed backends (Redis, Memcached)
 - Flexible authentication strategies
 
 

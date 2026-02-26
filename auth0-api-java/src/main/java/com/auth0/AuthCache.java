@@ -1,4 +1,4 @@
-package com.auth0.cache;
+package com.auth0;
 
 /**
  * Cache abstraction for storing authentication-related data such as

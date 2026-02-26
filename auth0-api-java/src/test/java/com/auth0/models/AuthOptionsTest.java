@@ -1,8 +1,8 @@
 package com.auth0.models;
 
 import com.auth0.DomainResolver;
-import com.auth0.cache.AuthCache;
-import com.auth0.cache.InMemoryAuthCache;
+import com.auth0.AuthCache;
+import com.auth0.InMemoryAuthCache;
 import com.auth0.enums.DPoPMode;
 import org.junit.Test;
 

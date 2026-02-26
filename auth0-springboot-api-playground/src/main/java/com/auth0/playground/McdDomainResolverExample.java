@@ -1,7 +1,7 @@
 package com.auth0.playground;
 
-import com.auth0.spring.boot.Auth0DomainResolver;
-import com.auth0.spring.boot.Auth0RequestContext;
+import com.auth0.DomainResolver;
+import com.auth0.models.RequestContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,20 +14,17 @@ import java.util.Map;
  * Example: Multi-Custom Domain (MCD) configuration with a dynamic domain
  * resolver.
  * <p>
- * Demonstrates how an end developer uses {@link Auth0DomainResolver} to
- * dynamically
- * resolve allowed issuer domains at request time — without any direct
- * dependency
- * on the core {@code auth0-api-java} module.
+ * Demonstrates how an end developer uses {@link DomainResolver} to dynamically
+ * resolve allowed issuer domains at request time.
  * </p>
  *
  * <h3>How it works</h3>
  * <ol>
- * <li>Define an {@link Auth0DomainResolver} bean in a {@code @Configuration}
+ * <li>Define a {@link DomainResolver} bean in a {@code @Configuration}
  * class</li>
- * <li>The auto-configuration picks it up and bridges it into the SDK's
- * internal domain resolution pipeline</li>
- * <li>On each request, the resolver receives an {@link Auth0RequestContext}
+ * <li>The auto-configuration picks it up and passes it to the SDK's
+ * domain resolution pipeline</li>
+ * <li>On each request, the resolver receives a {@link RequestContext}
  * containing the request URL, headers, and unverified token issuer</li>
  * <li>The resolver returns the list of allowed issuer domains for that
  * request</li>
@@ -36,7 +33,7 @@ import java.util.Map;
  * <h3>Activation</h3>
  * <p>
  * Just define this {@code @Configuration} class in your project.
- * The auto-configuration detects the {@link Auth0DomainResolver} bean
+ * The auto-configuration detects the {@link DomainResolver} bean
  * automatically — no extra YAML properties needed.
  * </p>
  *
@@ -50,8 +47,8 @@ import java.util.Map;
  * against a known allowlist</li>
  * </ul>
  *
- * @see Auth0DomainResolver
- * @see Auth0RequestContext
+ * @see DomainResolver
+ * @see RequestContext
  */
 @Configuration
 public class McdDomainResolverExample {
@@ -72,7 +69,7 @@ public class McdDomainResolverExample {
      * Dynamic domain resolver that resolves allowed issuers based on the
      * {@code X-Tenant-ID} request header.
      * <p>
-     * The resolver receives an {@link Auth0RequestContext} with:
+     * The resolver receives a {@link RequestContext} with:
      * <ul>
      * <li>{@code context.getUrl()} — the API request URL</li>
      * <li>{@code context.getHeaders()} — all request headers (lowercase keys)</li>
@@ -88,10 +85,10 @@ public class McdDomainResolverExample {
      *      http://localhost:8080/api/protected
      * </pre>
      *
-     * @return an {@link Auth0DomainResolver} that maps tenant IDs to Auth0 domains
+     * @return a {@link DomainResolver} that maps tenant IDs to Auth0 domains
      */
     @Bean
-    public Auth0DomainResolver domainResolver() {
+    public DomainResolver domainResolver() {
         return context -> {
             String tenantId = context.getHeaders().get("x-tenant-id");
 

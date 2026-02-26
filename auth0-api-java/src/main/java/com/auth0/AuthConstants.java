@@ -1,6 +1,6 @@
 package com.auth0;
 
-public class AuthConstants {
+class AuthConstants {
     public static final String AUTHORIZATION_HEADER = "authorization";
     public static final String DPOP_HEADER = "dpop";
     public static final String BEARER_SCHEME = "bearer";
