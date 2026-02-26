@@ -1,8 +1,14 @@
 {
   "files": {
-    "README.md": [],
     ".version": [],
-    "build.gradle": ["version = \"{MAJOR}.{MINOR}.{PATCH}\""]
+    "README.md": [
+      "<version>{MAJOR}.{MINOR}.{PATCH}</version>",
+      "`{MAJOR}.{MINOR}.{PATCH}`"
+    ],
+    "auth0-springboot-api/README.md": [
+      "<version>{MAJOR}.{MINOR}.{PATCH}</version>",
+      "auth0-springboot-api:{MAJOR}.{MINOR}.{PATCH}"
+    ]
   },
   "prefixVersion": false
 }
