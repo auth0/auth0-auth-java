@@ -1,0 +1,14 @@
+{
+  "files": {
+    ".version": [],
+    "README.md": [
+      "<version>{MAJOR}.{MINOR}.{PATCH}</version>",
+      "`{MAJOR}.{MINOR}.{PATCH}`"
+    ],
+    "auth0-springboot-api/README.md": [
+      "<version>{MAJOR}.{MINOR}.{PATCH}</version>",
+      "auth0-springboot-api:{MAJOR}.{MINOR}.{PATCH}"
+    ]
+  },
+  "prefixVersion": false
+}
