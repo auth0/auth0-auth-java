@@ -51,7 +51,10 @@ test {
     }
 }
 
-// Don't build executable JAR for library
+bootJar {
+    enabled = false
+}
+
 jar {
     enabled = true
     archiveClassifier = ''
