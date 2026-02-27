@@ -40,8 +40,8 @@ public class SecurityConfig {
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/protected").authenticated()
                     .requestMatchers("/api/public").permitAll()
+                    .requestMatchers("/api/protected").authenticated()
                     .anyRequest().authenticated()
                 )
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
@@ -86,16 +86,12 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<Map<String, Object>> getUserProfile(Authentication authentication) {
-        if (authentication instanceof Auth0AuthenticationToken) {
-            Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
-            DecodedJWT jwt = auth0Token.getJwt();
-
+        if (authentication instanceof Auth0AuthenticationToken auth0Token) {
             return ResponseEntity.ok(Map.of(
-                "sub", jwt.getSubject(),
-                "email", jwt.getClaim("email").asString(),
-                "scope", jwt.getClaim("scope").asString(),
-                "exp", jwt.getExpiresAt(),
-                "iat", jwt.getIssuedAt()
+                "sub", String.valueOf(auth0Token.getClaim("sub")),
+                "email", String.valueOf(auth0Token.getClaim("email")),
+                "scope", String.valueOf(auth0Token.getClaim("scope")),
+                "scopes", auth0Token.getScopes()
             ));
         }
 
@@ -118,7 +114,7 @@ Accepts both Bearer and DPoP tokens:
 auth0:
   domain: "your-tenant.auth0.com"
   audience: "https://api.example.com"
-  dpopMode: ALLOWED # Default value
+  dpop-mode: ALLOWED
 ```
 
 #### 2. Required Mode
@@ -129,7 +125,7 @@ Only accepts DPoP tokens:
 auth0:
   domain: "your-tenant.auth0.com"
   audience: "https://api.example.com"
-  dpopMode: REQUIRED
+  dpop-mode: REQUIRED
 ```
 
 #### 3. Disabled Mode
@@ -140,7 +136,7 @@ Only accepts Bearer tokens:
 auth0:
   domain: "your-tenant.auth0.com"
   audience: "https://api.example.com"
-  dpopMode: DISABLED
+  dpop-mode: DISABLED
 ```
 
 ### Advanced DPoP Configuration
@@ -149,40 +145,30 @@ auth0:
 auth0:
   domain: "your-tenant.auth0.com"
   audience: "https://api.example.com"
-  dpopMode: ALLOWED
-  dpopIatOffsetSeconds: 300 # DPoP proof time window (default: 300)
-  dpopIatLeewaySeconds: 30 # DPoP proof time leeway (default: 30)
+  dpop-mode: ALLOWED
+  dpop-iat-offset-seconds: 300  # DPoP proof time window (default: 300)
+  dpop-iat-leeway-seconds: 30   # DPoP proof time leeway (default: 30)
 ```
 
-### DPoP-Token Controller
+### How DPoP Works in Your Controllers
+
+DPoP validation is handled entirely by the library at the filter level. Your controllers don't need any DPoP-specific code — the library validates the DPoP proof automatically before the request reaches your controller. A validated DPoP request produces the same `Auth0AuthenticationToken` as a Bearer request:
 
 ```java
 @RestController
 @RequestMapping("/api")
-public class DPoPController {
+public class SensitiveDataController {
 
     @GetMapping("/sensitive")
-    public ResponseEntity<Map<String, Object>> sensitiveEndpoint(
-            Authentication authentication,
-            HttpServletRequest request
-    ) {
-        if (authentication instanceof Auth0AuthenticationToken) {
-            Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
-            AuthenticationContext context = auth0Token.getAuthenticationContext();
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", authentication.getName());
-            response.put("scheme", context.getScheme().toString());
-
-            if (context.getScheme() == AuthScheme.DPOP) {
-                response.put("message", "Access granted with DPoP proof");
-                response.put("dpop_bound", true);
-            } else {
-                response.put("message", "Access granted with Bearer token");
-                response.put("dpop_bound", false);
-            }
-
-            return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> sensitiveEndpoint(Authentication authentication) {
+        // This works the same whether the client used Bearer or DPoP.
+        // DPoP proof validation already happened in the filter.
+        if (authentication instanceof Auth0AuthenticationToken auth0Token) {
+            return ResponseEntity.ok(Map.of(
+                "user", authentication.getName(),
+                "scopes", auth0Token.getScopes(),
+                "message", "Access granted"
+            ));
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -190,79 +176,106 @@ public class DPoPController {
 }
 ```
 
+The difference is in what the library **rejects**:
+- `ALLOWED` mode: Accepts both `Authorization: Bearer <token>` and `Authorization: DPoP <token>` + `DPoP: <proof>`
+- `REQUIRED` mode: Rejects Bearer tokens — only `DPoP` tokens with a valid proof are accepted
+- `DISABLED` mode: Rejects DPoP tokens — only `Bearer` tokens are accepted
+
 ## Scope-Based Authorization
 
-### Method-Level Security
+The library maps JWT scopes to Spring Security authorities with a `SCOPE_` prefix. For example, a token with `scope: "read:messages write:messages"` produces authorities `SCOPE_read:messages` and `SCOPE_write:messages`.
+
+### Option 1: Security Filter Chain (Recommended)
+
+The simplest approach — define scope requirements in your security configuration:
+
+```java
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    SecurityFilterChain apiSecurity(
+            HttpSecurity http,
+            Auth0AuthenticationFilter authFilter
+    ) throws Exception {
+        return http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/api/public").permitAll()
+                    .requestMatchers("/api/admin/**").hasAuthority("SCOPE_admin")
+                    .requestMatchers("/api/users/**").hasAuthority("SCOPE_read:users")
+                    .anyRequest().authenticated()
+                )
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+}
+```
+
+### Option 2: Method-Level Security with @PreAuthorize
+
+For fine-grained control per method. Requires `@EnableMethodSecurity` on a configuration class:
+
+```java
+@Configuration
+@EnableMethodSecurity
+public class MethodSecurityConfig {
+    // Enables @PreAuthorize annotations
+}
+```
 
 ```java
 @RestController
-@RequestMapping("/api")
-@PreAuthorize("hasAuthority('SCOPE_read:users')")
+@RequestMapping("/api/users")
 public class UserManagementController {
 
-    @GetMapping("/users")
+    @GetMapping
     @PreAuthorize("hasAuthority('SCOPE_read:users')")
     public ResponseEntity<List<User>> getUsers() {
-        // Only accessible with 'read:users' scope
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PostMapping("/users")
+    @PostMapping
     @PreAuthorize("hasAuthority('SCOPE_write:users')")
     public ResponseEntity<User> createUser(@RequestBody User user) {
-        // Only accessible with 'write:users' scope
         return ResponseEntity.ok(userService.createUser(user));
     }
 
-    @DeleteMapping("/users/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SCOPE_delete:users')")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        // Only accessible with 'delete:users' scope
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 }
 ```
 
-### Custom Scope Validation
+### Option 3: Programmatic Scope Check
+
+Use `getScopes()` on the token directly when you need custom logic:
 
 ```java
-@Component
-public class ScopeValidator {
-
-    public boolean hasRequiredScopes(Authentication authentication, String... requiredScopes) {
-        if (!(authentication instanceof Auth0AuthenticationToken)) {
-            return false;
-        }
-
-        Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
-        DecodedJWT jwt = auth0Token.getJwt();
-        String scopeClaim = jwt.getClaim("scope").asString();
-
-        if (scopeClaim == null) {
-            return false;
-        }
-
-        Set<String> tokenScopes = Set.of(scopeClaim.split(" "));
-        return tokenScopes.containsAll(Arrays.asList(requiredScopes));
-    }
-}
-
 @RestController
 @RequestMapping("/api")
-public class CustomScopeController {
-
-    @Autowired
-    private ScopeValidator scopeValidator;
+public class AdminController {
 
     @GetMapping("/admin")
     public ResponseEntity<Map<String, Object>> adminEndpoint(Authentication authentication) {
-        if (!scopeValidator.hasRequiredScopes(authentication, "admin", "read:admin")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("error", "insufficient_scope"));
+        if (authentication instanceof Auth0AuthenticationToken auth0Token) {
+            Set<String> scopes = auth0Token.getScopes();
+
+            if (!scopes.contains("admin") || !scopes.contains("read:admin")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "insufficient_scope"));
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Admin access granted"));
         }
 
-        return ResponseEntity.ok(Map.of("message", "Admin access granted"));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }
 ```
@@ -281,15 +294,15 @@ auth0:
 
   # Optional: DPoP mode (DISABLED, ALLOWED, REQUIRED)
   # Default: ALLOWED
-  dpopMode: ALLOWED
+  dpop-mode: ALLOWED
 
   # Optional: DPoP proof time window in seconds
   # Default: 300 (5 minutes)
-  dpopIatOffsetSeconds: 300
+  dpop-iat-offset-seconds: 300
 
   # Optional: DPoP proof time leeway in seconds
   # Default: 30 (30 seconds)
-  dpopIatLeewaySeconds: 30
+  dpop-iat-leeway-seconds: 30
 ```
 
 ### Environment Variables
@@ -299,10 +312,12 @@ You can also configure using environment variables:
 ```bash
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://api.example.com
-AUTH0_DPOP_MODE=ALLOWED
-AUTH0_DPOP_IAT_OFFSET_SECONDS=300
-AUTH0_DPOP_IAT_LEEWAY_SECONDS=30
+AUTH0_DPOPMODE=ALLOWED
+AUTH0_DPOPIATOFFSETSECONDS=300
+AUTH0_DPOPIATLEEWAYSSECONDS=30
 ```
+
+> **Note:** Spring Boot environment variable binding removes dashes and is case-insensitive. Do not use underscores to separate words within a property name (e.g., use `AUTH0_DPOPMODE`, not `AUTH0_DPOP_MODE`).
 
 ## Error Handling
 
@@ -310,11 +325,10 @@ AUTH0_DPOP_IAT_LEEWAY_SECONDS=30
 
 - **401 Unauthorized**: Missing or invalid token
 - **403 Forbidden**: Valid token but insufficient permissions
-- **400 Bad Request**: Invalid DPoP proof or malformed request
 
 ### WWW-Authenticate Headers
 
-The library automatically sets appropriate `WWW-Authenticate` headers:
+The library automatically sets appropriate `WWW-Authenticate` headers on authentication failures:
 
 ```
 # ALLOWED mode (default)
@@ -326,12 +340,3 @@ WWW-Authenticate: DPoP algs="ES256"
 # DPoP-specific errors
 WWW-Authenticate: DPoP error="invalid_dpop_proof", error_description="DPoP proof validation failed"
 ```
-
-## Best Practices
-
-1. **Environment-Specific Configuration**: Use different Auth0 domains and audiences for different environments
-2. **Scope Validation**: Always validate scopes for sensitive operations
-3. **Error Handling**: Implement comprehensive error handling for auth failures
-4. **Testing**: Use mocked authentication for unit tests and real tokens for integration tests
-5. **Security Headers**: Ensure proper CORS and security headers are configured
-6. **DPoP Mode**: Use `REQUIRED` mode for high-security APIs, `ALLOWED` for gradual adoption
