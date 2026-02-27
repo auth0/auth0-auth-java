@@ -1,5 +1,6 @@
 package com.auth0.playground;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,13 +12,20 @@ import java.util.Map;
 public class ProfileController {
 
     @GetMapping("/protected")
-    public String protectedEndpoint(Authentication authentication) {
-        System.out.println("🔐 Received request for protected resource: "+ authentication.getPrincipal().toString());
-        return "Hello " + authentication.getName() + ", access granted!";
+    public ResponseEntity<Map<String, Object>> protectedEndpoint(Authentication authentication) {
+        String userId = authentication.getName(); // Returns the 'sub' claim
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Access granted!",
+                "user", userId,
+                "authenticated", true
+        ));
     }
 
     @GetMapping("/public")
-    public Map<String, Object> pub() {
-        return Map.of("message", "Public endpoint — no token required");
+    public ResponseEntity<Map<String, Object>> publicEndpoint() {
+        return ResponseEntity.ok(Map.of(
+                "message", "Public endpoint - no token required"
+        ));
     }
 }

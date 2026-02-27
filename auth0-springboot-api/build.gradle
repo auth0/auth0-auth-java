@@ -5,8 +5,14 @@ plugins {
     id "com.diffplug.spotless" version "6.25.0"
 }
 
+ext {
+    POM_ARTIFACT_ID = 'auth0-springboot-api'
+    POM_NAME = 'auth0-springboot-api'
+    POM_DESCRIPTION = 'Auth0 Springboot Authentication Library with DPoP Support'
+    POM_PACKAGING = 'jar'
+}
+
 apply from: rootProject.file('gradle/versioning.gradle')
-apply from: rootProject.file('gradle/maven-publish.gradle')
 
 group = GROUP
 version = getVersionFromFile()
@@ -45,7 +51,10 @@ test {
     }
 }
 
-// Don't build executable JAR for library
+bootJar {
+    enabled = false
+}
+
 jar {
     enabled = true
     archiveClassifier = ''
@@ -60,3 +69,5 @@ spotless {
 
 
 logger.lifecycle("Using version ${version} for ${name} group ${group}")
+apply from: rootProject.file('gradle/maven-publish.gradle')
+

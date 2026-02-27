@@ -18,7 +18,7 @@ import org.springframework.test.context.TestPropertySource;
  *
  * <p>
  */
-@SpringBootTest
+@SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
 @TestPropertySource(
     properties = {"auth0.domain=test-domain.auth0.com", "auth0.audience=https://api.example.com"})
 class Auth0AutoConfigurationTest {
@@ -52,7 +52,7 @@ class Auth0AutoConfigurationTest {
   }
 
   @Nested
-  @SpringBootTest
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
   @TestPropertySource(
       properties = {
         "auth0.domain=dpop-test.auth0.com",
@@ -88,7 +88,7 @@ class Auth0AutoConfigurationTest {
   }
 
   @Nested
-  @SpringBootTest
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
   @TestPropertySource(
       properties = {
         "auth0.domain=minimal-test.auth0.com",
@@ -110,7 +110,7 @@ class Auth0AutoConfigurationTest {
   }
 
   @Nested
-  @SpringBootTest
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
   @TestPropertySource(
       properties = {
         "auth0.domain=partial-dpop.auth0.com",
