@@ -22,7 +22,6 @@ class DisabledDPoPAuthentication extends AbstractAuthentication {
     public AuthenticationContext authenticate(HttpRequestInfo requestInfo)
             throws BaseAuthException {
 
-//        Map<String, String> normalizedHeader = normalize(requestInfo.getHeaders());
         try {
             DecodedJWT jwt = validateBearerToken(requestInfo);
 

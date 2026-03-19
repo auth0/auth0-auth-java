@@ -15,7 +15,7 @@ public class HttpRequestInfo {
     public HttpRequestInfo(String httpMethod, String httpUrl, Map<String, String> headers) throws InvalidRequestException {
         Asserts.notNull(headers, "Headers map cannot be null");
 
-        this.httpMethod = httpMethod.toUpperCase();
+        this.httpMethod = httpMethod != null ? httpMethod.toUpperCase() : null;
         this.httpUrl = httpUrl;
         this.headers = normalize(headers);
     }

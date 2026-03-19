@@ -25,6 +25,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Uses a {@link ReentrantReadWriteLock} so concurrent reads do not block each
  * other,
  * while writes acquire exclusive access.
+ * Protected by a {@link ReentrantReadWriteLock}. Because the underlying
+ * {@link LinkedHashMap} is configured in access-order for LRU eviction,
+ * {@link #get(String)} mutates the map and therefore acquires the write lock.
+ * As a result, cache operations ({@code get}, {@code put}, {@code remove},
+ * {@code clear}) are serialized; only {@link #size()} uses the read lock for
+ * concurrent inspection.
  * </p>
  *
  * @param <V> the type of cached values
