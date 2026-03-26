@@ -15,13 +15,13 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.HttpRequestInfo;
 import com.auth0.models.RequestContext;
-import com.auth0.OidcDiscoveryFetcher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -138,11 +138,13 @@ class JWTValidator {
                 throw new VerifyAccessTokenException("Token issuer is not in the allowed list");
             }
 
-            OidcMetadata discovery = performOidcDiscovery(tokenIss);
+            OidcMetadata discovery = performOidcDiscovery(normalizedIss);
 
-            if (!tokenIss.equals(discovery.getIssuer())) {
+            if (!normalizedIss.equals(normalizeToUrl(discovery.getIssuer()))) {
                 throw new VerifyAccessTokenException("Discovery metadata issuer does not match token issuer");
             }
+
+            validateJwksUriHost(normalizedIss, discovery.getJwksUri());
 
             JwkProvider dynamicJwkProvider = getOrCreateJwkProvider(discovery.getJwksUri());
 
@@ -156,6 +158,8 @@ class JWTValidator {
 
             return verifier.verify(token);
 
+        } catch (BaseAuthException e) {
+            throw e;
         } catch (Exception e) {
             throw new VerifyAccessTokenException("signature verification failed", e);
         }
@@ -342,9 +346,36 @@ class JWTValidator {
     }
 
     /**
+     * Validates that the JWKS URI host matches the issuer host.
+     * <p>
+     * Prevents a compromised OIDC discovery endpoint from redirecting JWKS
+     * fetches to an attacker-controlled domain.
+     * </p>
+     *
+     * @param issuerUrl the normalized issuer URL
+     * @param jwksUri   the {@code jwks_uri} from discovery metadata
+     * @throws VerifyAccessTokenException if the hosts do not match
+     */
+    private void validateJwksUriHost(String issuerUrl, String jwksUri) throws VerifyAccessTokenException {
+        try {
+            String issuerHost = new URL(issuerUrl).getHost().toLowerCase(Locale.ROOT);
+            String jwksHost = new URL(jwksUri).getHost().toLowerCase(Locale.ROOT);
+            if (!issuerHost.equals(jwksHost)) {
+                throw new VerifyAccessTokenException("JWKS URI host does not match issuer host");
+            }
+        } catch (MalformedURLException e) {
+            throw new VerifyAccessTokenException("Invalid URL during JWKS URI host validation", e);
+        }
+    }
+
+    /**
      * Normalizes a domain string into a full HTTPS URL with a trailing slash.
-     * Ensures consistent comparison (e.g., {@code "tenant.auth0.com"} becomes
+     * <p>
+     * Lowercases the scheme and host per RFC 3986 (scheme and host are
+     * case-insensitive). Ensures consistent comparison regardless of how the
+     * domain was configured (e.g., {@code "Tenant.Auth0.com"} becomes
      * {@code "https://tenant.auth0.com/"}).
+     * </p>
      *
      * @param domain the raw domain or URL string
      * @return the normalized URL, or {@code null} if input is {@code null}
@@ -354,9 +385,28 @@ class JWTValidator {
             return null;
 
         String url = domain.trim();
-        if (!url.toLowerCase().startsWith("http")) {
+        if (!url.toLowerCase(Locale.ROOT).startsWith("http")) {
             url = "https://" + url;
         }
-        return url.endsWith("/") ? url : url + "/";
+
+        try {
+            URL parsed = new URL(url);
+            StringBuilder normalized = new StringBuilder();
+            normalized.append(parsed.getProtocol().toLowerCase(Locale.ROOT));
+            normalized.append("://");
+            normalized.append(parsed.getHost().toLowerCase(Locale.ROOT));
+            int port = parsed.getPort();
+            if (port > 0 && port != parsed.getDefaultPort()) {
+                normalized.append(":").append(port);
+            }
+            String path = parsed.getPath();
+            normalized.append(path == null || path.isEmpty() ? "/" : path);
+            String result = normalized.toString();
+            return result.endsWith("/") ? result : result + "/";
+        } catch (MalformedURLException e) {
+            // Fallback: simple lowercase normalization
+            url = url.toLowerCase(Locale.ROOT);
+            return url.endsWith("/") ? url : url + "/";
+        }
     }
 }

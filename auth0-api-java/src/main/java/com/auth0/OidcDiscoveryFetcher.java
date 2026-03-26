@@ -11,6 +11,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
@@ -25,8 +26,13 @@ import java.io.IOException;
  * <p>
  * Thread-safe: delegates thread safety to the {@link AuthCache} implementation.
  * </p>
+ * <p>
+ * Implements {@link Closeable} to manage the lifecycle of the internal HTTP client.
+ * Only self-created HTTP clients are closed; externally-provided clients are left
+ * to the caller.
+ * </p>
  */
-class OidcDiscoveryFetcher {
+class OidcDiscoveryFetcher implements Closeable {
 
     static final String CACHE_PREFIX = "discovery:";
     private static final String WELL_KNOWN_PATH = ".well-known/openid-configuration";
@@ -34,23 +40,30 @@ class OidcDiscoveryFetcher {
 
     private final AuthCache<Object> cache;
     private final CloseableHttpClient httpClient;
+    private final boolean ownsHttpClient;
 
     /**
      * Creates a fetcher with the provided cache and the default HTTP client.
+     * The fetcher owns the HTTP client and will close it when {@link #close()} is called.
      *
      * @param cache the unified cache instance
      */
     OidcDiscoveryFetcher(AuthCache<Object> cache) {
-        this(cache, HttpClients.createDefault());
+        this(cache, HttpClients.createDefault(), true);
     }
 
     /**
      * Creates a fetcher with the provided cache and a custom HTTP client.
+     * The caller retains ownership of the HTTP client and is responsible for closing it.
      *
      * @param cache      the unified cache instance
      * @param httpClient the HTTP client to use for discovery requests
      */
     OidcDiscoveryFetcher(AuthCache<Object> cache, CloseableHttpClient httpClient) {
+        this(cache, httpClient, false);
+    }
+
+    private OidcDiscoveryFetcher(AuthCache<Object> cache, CloseableHttpClient httpClient, boolean ownsHttpClient) {
         if (cache == null) {
             throw new IllegalArgumentException("cache must not be null");
         }
@@ -59,6 +72,7 @@ class OidcDiscoveryFetcher {
         }
         this.cache = cache;
         this.httpClient = httpClient;
+        this.ownsHttpClient = ownsHttpClient;
     }
 
     /**
@@ -151,5 +165,16 @@ class OidcDiscoveryFetcher {
      */
     AuthCache<Object> getCache() {
         return cache;
+    }
+
+    /**
+     * Closes the HTTP client if this fetcher owns it.
+     * Externally-provided HTTP clients are not closed — the caller manages their lifecycle.
+     */
+    @Override
+    public void close() throws IOException {
+        if (ownsHttpClient) {
+            httpClient.close();
+        }
     }
 }
