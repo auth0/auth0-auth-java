@@ -12,8 +12,14 @@ import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.HttpRequestInfo;
+import com.auth0.telemetry.TelemetryProvider;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.auth0.jwt.JWT.require;
@@ -41,7 +47,7 @@ public class JWTValidator {
         }
 
         this.authOptions = authOptions;
-        this.jwkProvider = new UrlJwkProvider(authOptions.getDomain());
+        this.jwkProvider = createJwkProvider(authOptions.getDomain());
     }
 
     /**
@@ -168,6 +174,28 @@ public class JWTValidator {
     private BaseAuthException wrapAsValidationException(Exception e) {
         if (e instanceof BaseAuthException) return (BaseAuthException) e;
         return new VerifyAccessTokenException("JWT claim validation failed");
+    }
+
+    private static JwkProvider createJwkProvider(String domain) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Accept", "application/json");
+
+        String telemetry = TelemetryProvider.getHeaderValue();
+        if (telemetry != null) {
+            headers.put("Auth0-Client", telemetry);
+        }
+
+        String normalizedDomain = domain;
+        if (!normalizedDomain.startsWith("http")) {
+            normalizedDomain = "https://" + normalizedDomain;
+        }
+        try {
+            URI uri = new URI(normalizedDomain + "/.well-known/jwks.json").normalize();
+            URL url = uri.toURL();
+            return new UrlJwkProvider(url, null, null, null, headers);
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid domain: " + domain, e);
+        }
     }
 
     public AuthOptions getAuthOptions() {
