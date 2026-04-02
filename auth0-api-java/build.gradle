@@ -44,6 +44,12 @@ repositories {
     mavenCentral()
 }
 
+processResources {
+    filesMatching('auth0-client-info.properties') {
+        expand(version: project.version)
+    }
+}
+
 test {
     useJUnit()
     testLogging {
