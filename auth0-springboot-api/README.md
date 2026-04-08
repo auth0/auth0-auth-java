@@ -199,8 +199,9 @@ auth0:
   domain: "primary.auth0.com"
   audience: "https://your-api-identifier"
   domains:
-    - "login.acme.com"
-    - "auth.partner.com"
+     - "brandA.acme.com"
+     - "brandB.acme.com"
+     - "brandC.acme.com"
 ```
 
 ### Option 2: Dynamic Domain Resolver

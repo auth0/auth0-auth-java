@@ -301,9 +301,9 @@ Configure a fixed set of allowed issuer domains in `application.yml`:
 auth0:
   audience: "https://api.example.com"
   domains:
-    - "login.acme.com"
-    - "auth.partner.com"
-    - "dev.example.com"
+    - "brandA.acme.com"
+    - "brandB.acme.com"
+    - "brandC.acme.com"
 ```
 
 Tokens whose `iss` claim matches any of these domains will be accepted. No code changes required.
