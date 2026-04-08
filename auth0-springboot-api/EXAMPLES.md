@@ -282,7 +282,7 @@ public class AdminController {
 
 ## Multiple Custom Domains (MCD)
 
-Multiple Custom Domains (MCD) support enables a single API application to accept access tokens issued by multiple domains associated with the same **Auth0 tenant**, including the canonical domain and its custom domains.
+Multiple Custom Domains (MCD) support enables a single API application to accept access tokens issued by multiple domains associated with the same Auth0 tenant, including the canonical domain and its custom domains.
 
 This is commonly required in scenarios such as:
 

@@ -6,7 +6,7 @@ This library builds on top of the standard Spring Security JWT authentication, p
 
 - **Complete Spring Security JWT Functionality** - All features from Spring Security JWT Bearer are available
 - **Built-in DPoP Support** - Industry-leading proof-of-possession token security per [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)
-- **Multi-Custom Domain (MCD) Support** - Validate tokens from multiple Auth0 custom domains with static lists or dynamic resolution
+- **Multiple Custom Domain (MCD) Support** - Validate tokens from multiple Auth0 custom domains with static lists or dynamic resolution
 - **Extensible Caching** - Pluggable `AuthCache` interface for OIDC discovery and JWKS caching with distributed backend support (Redis, Memcached)
 - **Auto-Configuration** - Spring Boot auto-configuration with minimal setup
 - **Flexible Authentication Modes** - Bearer-only, DPoP-only, or flexible mode supporting both
@@ -175,9 +175,9 @@ curl -H "Authorization: DPoP <jwt_token>" \
      https://your-api.example.com/api/protected
 ```
 
-## Multi-Custom Domain (MCD) Support
+## Multiple Custom Domain (MCD) Support
 
-For tenants with multiple custom domains, the SDK can validate tokens from any of the configured issuers. There are three ways to configure domain resolution:
+For tenant with multiple custom domains, the SDK can validate tokens from any of the configured issuers. There are three ways to configure domain resolution:
 
 ### Option 1: Static Domain List
 
