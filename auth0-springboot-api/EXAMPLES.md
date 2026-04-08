@@ -282,7 +282,16 @@ public class AdminController {
 
 ## Multiple Custom Domains (MCD)
 
-For APIs that accept tokens from multiple Auth0 custom domains (e.g., multi-tenant SaaS, domain migrations).
+Multiple Custom Domains (MCD) support enables a single API application to accept access tokens issued by multiple domains associated with the same **Auth0 tenant**, including the canonical domain and its custom domains.
+
+This is commonly required in scenarios such as:
+
+1. Multi-brand applications (B2C) where each brand uses a different custom domain but they all share the same API.
+2. A single API serves multiple frontend applications that use different custom domains.
+3. A gradual migration from the canonical domain to a custom domain, where both domains need to be supported during the transition period.
+
+In these cases, your API must trust and validate tokens from multiple issuers instead of a single domain.
+The SDK supports two approaches for configuring multiple domains, Static Domain List and Dynamic Domain Resolver.
 
 ### 1. Static Domain List
 
@@ -325,22 +334,6 @@ public class McdConfig {
 ```
 
 When a `DomainResolver` bean is present, it takes priority over the static `domains` list. The resolver receives a `RequestContext` with the request URL, headers, and the unverified `iss` claim from the token.
-
-### 3. Domain + Domains Coexistence (Auth for Agents)
-
-For Auth for Agents scenarios, `domain` and `domains` can coexist. The `domain` is used for Auth for Agents flows (token exchange, authorization), while `domains` is used for token validation:
-
-```yaml
-auth0:
-  domain: "primary-tenant.auth0.com"    # For Auth for Agents flows
-  audience: "https://api.example.com"
-  domains:                               # For token validation
-    - "primary-tenant.auth0.com"
-    - "tenant2.auth0.com"
-    - "tenant3.auth0.com"
-```
-
-When both are present, the SDK always uses `domains` for token verification.
 
 ## Caching
 

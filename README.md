@@ -49,7 +49,7 @@ It provides:
 
 - JWT validation with Auth0 JWKS integration
 - DPoP proof validation per [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)
-- Multi-Custom Domain (MCD) support — static domain lists, or dynamic resolution at request time
+- Multiple Custom Domain (MCD) support — static domain lists, or dynamic resolution at request time
 - Extensible caching — pluggable `AuthCache` interface for distributed backends (Redis, Memcached)
 - Flexible authentication strategies
 
