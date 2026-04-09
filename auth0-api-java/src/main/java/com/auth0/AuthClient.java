@@ -4,10 +4,6 @@ import com.auth0.exception.BaseAuthException;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.AuthOptions;
 import com.auth0.models.HttpRequestInfo;
-import com.auth0.validators.DPoPProofValidator;
-import com.auth0.validators.JWTValidator;
-
-import java.util.Map;
 
 public class AuthClient {
 
@@ -45,12 +41,11 @@ public class AuthClient {
 
     /**
      * Verifies the incoming request headers and HTTP request info.
-     * @param headers request headers
      * @param requestInfo HTTP request info
      * @return AuthenticationContext with JWT claims
      * @throws BaseAuthException if verification fails
      */
-    public AuthenticationContext verifyRequest(Map<String, String> headers, HttpRequestInfo requestInfo) throws BaseAuthException {
-        return orchestrator.process(headers, requestInfo);
+    public AuthenticationContext verifyRequest(HttpRequestInfo requestInfo) throws BaseAuthException {
+        return orchestrator.process(requestInfo);
     }
 }

@@ -99,13 +99,13 @@ public class AuthValidatorHelperTest {
 
     @Test
     public void validateHttpMethodAndHttpUrl_shouldPassWithValidValues() throws BaseAuthException {
-        HttpRequestInfo request = new HttpRequestInfo("GET", "https://example.com", null);
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://example.com", new HashMap<>());
         AuthValidatorHelper.validateHttpMethodAndHttpUrl(request);
     }
 
     @Test(expected = MissingRequiredArgumentException.class)
     public void validateHttpMethodAndHttpUrl_shouldThrowWithEmptyValues() throws BaseAuthException {
-        HttpRequestInfo request = new HttpRequestInfo("", "", null);
+        HttpRequestInfo request = new HttpRequestInfo("", "", new HashMap<>());
         AuthValidatorHelper.validateHttpMethodAndHttpUrl(request);
     }
 

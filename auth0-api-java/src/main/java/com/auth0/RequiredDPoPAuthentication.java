@@ -5,10 +5,6 @@ import com.auth0.exception.BaseAuthException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
-import com.auth0.validators.DPoPProofValidator;
-import com.auth0.validators.JWTValidator;
-
-import java.util.Map;
 
 class RequiredDPoPAuthentication extends AbstractAuthentication {
 
@@ -19,20 +15,17 @@ class RequiredDPoPAuthentication extends AbstractAuthentication {
     }
 
     /**
-     * Authenticates the request when DPoP Mode is Allowed (Accepts only DPoP tokens) .
-     * @param headers request headers
+     * Authenticates the request when DPoP Mode is Required (Accepts only DPoP tokens) .
      * @param requestInfo HTTP request info
      * @return AuthenticationContext with JWT claims
      * @throws BaseAuthException if validation fails
      */
     @Override
-    public AuthenticationContext authenticate(Map<String, String> headers, HttpRequestInfo requestInfo)
+    public AuthenticationContext authenticate(HttpRequestInfo requestInfo)
             throws BaseAuthException {
 
-        Map<String, String> normalizedHeader = normalize(headers);
-
         try {
-            DecodedJWT decodedJWT = validateDpopTokenAndProof(normalizedHeader, requestInfo);
+            DecodedJWT decodedJWT = validateDpopTokenAndProof(requestInfo);
             return buildContext(decodedJWT);
         }
         catch (BaseAuthException ex){

@@ -1,4 +1,4 @@
-package com.auth0.validators;
+package com.auth0;
 
 import com.auth0.exception.*;
 import com.auth0.jwt.JWT;
@@ -46,7 +46,7 @@ public class DPoPProofValidatorTest {
         requestInfo = new HttpRequestInfo(
                 "GET",
                 "https://api.example.com/resource",
-                null
+                new HashMap<>()
         );
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");

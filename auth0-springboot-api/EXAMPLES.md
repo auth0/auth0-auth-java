@@ -280,17 +280,156 @@ public class AdminController {
 }
 ```
 
+## Multiple Custom Domains (MCD)
+
+Multiple Custom Domains (MCD) support enables a single API application to accept access tokens issued by multiple domains associated with the same Auth0 tenant, including the canonical domain and its custom domains.
+
+This is commonly required in scenarios such as:
+
+1. Multi-brand applications (B2C) where each brand uses a different custom domain but they all share the same API.
+2. A single API serves multiple frontend applications that use different custom domains.
+3. A gradual migration from the canonical domain to a custom domain, where both domains need to be supported during the transition period.
+
+In these cases, your API must trust and validate tokens from multiple issuers instead of a single domain.
+The SDK supports two approaches for configuring multiple domains, Static Domain List and Dynamic Domain Resolver.
+
+### 1. Static Domain List
+
+Configure a fixed set of allowed issuer domains in `application.yml`:
+
+```yaml
+auth0:
+  audience: "https://api.example.com"
+  domains:
+    - "brandA.acme.com"
+    - "brandB.acme.com"
+    - "brandC.acme.com"
+```
+
+Tokens whose `iss` claim matches any of these domains will be accepted. No code changes required.
+
+### 2. Dynamic Domain Resolver
+
+For scenarios where the allowed issuers depend on runtime context (tenant headers, database lookups, etc.), define a `DomainResolver` bean:
+
+```java
+import com.auth0.DomainResolver;
+import com.auth0.models.RequestContext;
+
+@Configuration
+public class McdConfig {
+
+    @Bean
+    public DomainResolver domainResolver(TenantService tenantService) {
+        return context -> {
+            // context.getHeaders()      — request headers (lowercase keys)
+            // context.getUrl()          — the API request URL
+            // context.getTokenIssuer()  — unverified iss claim (routing hint only)
+            String tenantId = context.getHeaders().get("x-tenant-id");
+            List<String> domains = tenantService.getDomainsForTenant(tenantId);
+            return domains;
+        };
+    }
+}
+```
+
+When a `DomainResolver` bean is present, it takes priority over the static `domains` list. The resolver receives a `RequestContext` with the request URL, headers, and the unverified `iss` claim from the token.
+
+## Caching
+
+The SDK caches OIDC discovery metadata and JWKS providers in a unified cache. By default, it uses a thread-safe in-memory LRU cache.
+
+### Cache Configuration
+
+```yaml
+auth0:
+  domain: "your-tenant.auth0.com"
+  audience: "https://api.example.com"
+  cache-max-entries: 100   # Max entries before LRU eviction (default: 100)
+  cache-ttl-seconds: 600   # TTL per entry in seconds (default: 600 = 10 minutes)
+```
+
+Both OIDC discovery and JWKS entries count against the `cache-max-entries` limit.
+
+### Custom Cache Implementation
+
+Replace the default in-memory cache with a distributed backend (Redis, Memcached, etc.) by implementing the `AuthCache` interface and registering it as a Spring bean:
+
+```java
+import com.auth0.AuthCache;
+
+public class RedisAuthCache implements AuthCache<Object> {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final Duration ttl;
+
+    public RedisAuthCache(RedisTemplate<String, Object> redisTemplate, Duration ttl) {
+        this.redisTemplate = redisTemplate;
+        this.ttl = ttl;
+    }
+
+    @Override
+    public Object get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    @Override
+    public void put(String key, Object value) {
+        redisTemplate.opsForValue().set(key, value, ttl);
+    }
+
+    @Override
+    public void remove(String key) {
+        redisTemplate.delete(key);
+    }
+
+    @Override
+    public void clear() {
+        Set<String> keys = redisTemplate.keys("discovery:*");
+        if (keys != null) redisTemplate.delete(keys);
+        keys = redisTemplate.keys("jwks:*");
+        if (keys != null) redisTemplate.delete(keys);
+    }
+
+    @Override
+    public int size() {
+        return 0; // approximate
+    }
+}
+```
+
+Register it as a bean — the auto-configuration picks it up automatically:
+
+```java
+@Configuration
+public class CacheConfig {
+
+    @Bean
+    public AuthCache<Object> authCache(RedisTemplate<String, Object> redisTemplate) {
+        return new RedisAuthCache(redisTemplate, Duration.ofMinutes(10));
+    }
+}
+```
+
+When a custom `AuthCache` bean is present, the `cache-max-entries` and `cache-ttl-seconds` properties are ignored — your implementation controls its own eviction and TTL.
+
 ## Configuration Reference
 
 ### Complete Configuration Example
 
 ```yaml
 auth0:
-  # Required: Your Auth0 domain
+  # Required (unless domains or domainsResolver is set): Your Auth0 domain
   domain: "your-tenant.auth0.com"
 
   # Required: API identifier/audience
   audience: "https://api.example.com"
+
+  # Optional: Static list of allowed issuer domains (MCD)
+  # Mutually exclusive with domainsResolver bean
+  domains:
+    - "login.acme.com"
+    - "auth.partner.com"
 
   # Optional: DPoP mode (DISABLED, ALLOWED, REQUIRED)
   # Default: ALLOWED
@@ -303,6 +442,14 @@ auth0:
   # Optional: DPoP proof time leeway in seconds
   # Default: 30 (30 seconds)
   dpop-iat-leeway-seconds: 30
+
+  # Optional: Max cache entries before LRU eviction
+  # Default: 100
+  cache-max-entries: 100
+
+  # Optional: Cache TTL in seconds
+  # Default: 600 (10 minutes)
+  cache-ttl-seconds: 600
 ```
 
 ### Environment Variables
@@ -312,9 +459,12 @@ You can also configure using environment variables:
 ```bash
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://api.example.com
+AUTH0_DOMAINS=login.acme.com,auth.partner.com
 AUTH0_DPOPMODE=ALLOWED
 AUTH0_DPOPIATOFFSETSECONDS=300
 AUTH0_DPOPIATLEEWAYSSECONDS=30
+AUTH0_CACHEMAXENTRIES=100
+AUTH0_CACHETTLSECONDS=600
 ```
 
 > **Note:** Spring Boot environment variable binding removes dashes and is case-insensitive. Do not use underscores to separate words within a property name (e.g., use `AUTH0_DPOPMODE`, not `AUTH0_DPOP_MODE`).

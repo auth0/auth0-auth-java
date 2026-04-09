@@ -8,8 +8,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.AuthToken;
 import com.auth0.models.AuthenticationContext;
 import com.auth0.models.HttpRequestInfo;
-import com.auth0.validators.DPoPProofValidator;
-import com.auth0.validators.JWTValidator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,6 +16,8 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 public class AbstractAuthenticationTest {
@@ -31,15 +31,13 @@ public class AbstractAuthenticationTest {
      */
     private static class TestAuthImpl extends AbstractAuthentication {
         TestAuthImpl(JWTValidator jwtValidator,
-                     TokenExtractor extractor,
-                     DPoPProofValidator dpopProofValidator) {
+                TokenExtractor extractor,
+                DPoPProofValidator dpopProofValidator) {
             super(jwtValidator, extractor, dpopProofValidator);
         }
 
         @Override
-        public AuthenticationContext authenticate(
-                Map<String, String> headers,
-                HttpRequestInfo requestInfo) {
+        public AuthenticationContext authenticate(HttpRequestInfo requestInfo) {
             return null;
         }
     }
@@ -80,12 +78,13 @@ public class AbstractAuthenticationTest {
         DecodedJWT jwt = mock(DecodedJWT.class);
 
         when(extractor.extractBearer(anyMap())).thenReturn(token);
-        when(jwtValidator.validateToken(eq("access"), anyMap(), any())).thenReturn(jwt);
+        when(jwtValidator.validateToken(eq("access"), any(HttpRequestInfo.class))).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "Bearer access");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
 
-        DecodedJWT result = authSystem.validateBearerToken(headers, null);
+        DecodedJWT result = authSystem.validateBearerToken(request);
 
         assertThat(result).isSameAs(jwt);
     }
@@ -94,17 +93,16 @@ public class AbstractAuthenticationTest {
     public void validateDpopTokenAndProof_shouldValidateEverything() throws Exception {
         AuthToken token = new AuthToken("access", "proof", null);
         DecodedJWT jwt = mock(DecodedJWT.class);
-        HttpRequestInfo request =
-                new HttpRequestInfo("GET", "https://api.example.com", null);
-
-        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(token);
-        when(jwtValidator.validateToken(eq("access"), anyMap(), any())).thenReturn(jwt);
 
         Map<String, String> headers = new HashMap<>();
         headers.put("authorization", "DPoP access");
         headers.put("dpop", "proof");
+        HttpRequestInfo request = new HttpRequestInfo("GET", "https://api.example.com", headers);
 
-        DecodedJWT result = authSystem.validateDpopTokenAndProof(headers, request);
+        when(extractor.extractDPoPProofAndDPoPToken(anyMap())).thenReturn(token);
+        when(jwtValidator.validateToken(eq("access"), any(HttpRequestInfo.class))).thenReturn(jwt);
+
+        DecodedJWT result = authSystem.validateDpopTokenAndProof(request);
 
         verify(dpopProofValidator).validate("proof", jwt, request);
         assertThat(result).isSameAs(jwt);
@@ -134,10 +132,50 @@ public class AbstractAuthenticationTest {
         when(ex.getErrorCode()).thenReturn("invalid_token");
         when(ex.getErrorDescription()).thenReturn("desc");
 
-        BaseAuthException result =
-                authSystem.prepareError(ex, DPoPMode.ALLOWED, "bearer");
+        BaseAuthException result = authSystem.prepareError(ex, DPoPMode.ALLOWED, "bearer");
 
         verify(ex).addHeader(eq("WWW-Authenticate"), anyString());
         assertThat(result).isSameAs(ex);
+    }
+
+    @Test
+    public void prepareError_shouldAddHeaderForDisabledMode() {
+        BaseAuthException ex = mock(BaseAuthException.class);
+        when(ex.getErrorCode()).thenReturn("invalid_token");
+        when(ex.getErrorDescription()).thenReturn("desc");
+
+        BaseAuthException result = authSystem.prepareError(ex, DPoPMode.DISABLED, AuthConstants.BEARER_SCHEME);
+
+        verify(ex).addHeader(eq("WWW-Authenticate"), anyString());
+        assertThat(result).isSameAs(ex);
+    }
+
+    @Test
+    public void prepareError_shouldAddHeaderForRequiredMode() {
+        BaseAuthException ex = mock(BaseAuthException.class);
+        when(ex.getErrorCode()).thenReturn("invalid_dpop_proof");
+        when(ex.getErrorDescription()).thenReturn("bad proof");
+
+        BaseAuthException result = authSystem.prepareError(ex, DPoPMode.REQUIRED, AuthConstants.DPOP_SCHEME);
+
+        verify(ex).addHeader(eq("WWW-Authenticate"), anyString());
+        assertThat(result).isSameAs(ex);
+    }
+
+    @Test
+    public void normalize_shouldHandleEmptyHeaders() throws BaseAuthException {
+        Map<String, String> headers = new HashMap<>();
+        Map<String, String> result = authSystem.normalize(headers);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void buildContext_shouldHandleEmptyClaims() {
+        DecodedJWT jwt = mock(DecodedJWT.class);
+        when(jwt.getClaims()).thenReturn(new HashMap<>());
+
+        AuthenticationContext ctx = authSystem.buildContext(jwt);
+
+        assertThat(ctx.getClaims()).isEmpty();
     }
 }

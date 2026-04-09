@@ -1,4 +1,4 @@
-package com.auth0.validators;
+package com.auth0;
 
 import com.auth0.exception.*;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -6,10 +6,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import java.util.*;
 
 /**
- * Utility class for JWT claim validation
- *
- * Provides functionality to validate JWT claims including scopes and custom
- * claim checks.
+ * Utility class for JWT claim validation. Provides functionality to validate JWT claims including scopes and custom claim checks.
  * This is the Java equivalent of the TypeScript claim validation utilities.
  */
 class ClaimValidator {
@@ -27,13 +24,11 @@ class ClaimValidator {
             throw new VerifyAccessTokenException("Required claim is missing");
         }
 
-        // Case 1: space-separated string
         String strValue = jwt.getClaim(claimName).asString();
         if (strValue != null) {
             return new HashSet<>(Arrays.asList(strValue.trim().split("\\s+")));
         }
 
-        // Case 2: list of strings
         List<String> listValue = jwt.getClaim(claimName).asList(String.class);
         if (listValue != null) {
             return new HashSet<>(listValue);

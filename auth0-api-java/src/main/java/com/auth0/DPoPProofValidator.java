@@ -1,4 +1,4 @@
-package com.auth0.validators;
+package com.auth0;
 
 import com.auth0.exception.BaseAuthException;
 import com.auth0.exception.InvalidDpopProofException;
@@ -20,13 +20,13 @@ import java.security.interfaces.ECPublicKey;
 import java.time.Instant;
 import java.util.*;
 
-public class DPoPProofValidator {
+class DPoPProofValidator {
 
     private final AuthOptions options;
     private final ObjectMapper objectMapper = new ObjectMapper();;
 
 
-    public DPoPProofValidator(AuthOptions options) {
+    DPoPProofValidator(AuthOptions options) {
         this.options = options;
     }
 
@@ -38,7 +38,7 @@ public class DPoPProofValidator {
      * @param requestInfo HTTP request info: method and URL
      * @throws BaseAuthException if the DPoP proof is invalid.
      */
-    public void validate(String dpopProof, DecodedJWT decodedJwtToken, HttpRequestInfo requestInfo)
+    void validate(String dpopProof, DecodedJWT decodedJwtToken, HttpRequestInfo requestInfo)
             throws BaseAuthException {
 
         DecodedJWT proofJwt = decodeDPoP(dpopProof);
@@ -197,7 +197,7 @@ public class DPoPProofValidator {
         }
     }
 
-    public static ECPublicKey convertJwkToEcPublicKey(Map<String, Object> jwkMap)
+    static ECPublicKey convertJwkToEcPublicKey(Map<String, Object> jwkMap)
             throws JwkException {
 
         Jwk jwk = Jwk.fromValues(jwkMap);

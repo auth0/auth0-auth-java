@@ -3,14 +3,20 @@ package com.auth0.spring.boot;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.auth0.AuthClient;
+import com.auth0.DomainResolver;
 import com.auth0.enums.DPoPMode;
 import com.auth0.models.AuthOptions;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.TestPropertySource;
 
 /**
@@ -131,6 +137,156 @@ class Auth0AutoConfigurationTest {
       // Others should be set to their respective defaults
       assertEquals(30, authOptions.getDpopIatLeewaySeconds());
       assertEquals(300, authOptions.getDpopIatOffsetSeconds());
+    }
+  }
+
+  @Nested
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
+  @TestPropertySource(
+      properties = {
+        "auth0.domain=",
+        "auth0.audience=https://api.mcd.com",
+        "auth0.domains[0]=login.acme.com",
+        "auth0.domains[1]=auth.partner.com",
+        "auth0.domains[2]=dev.example.com"
+      })
+  class McdDomainsConfigurationTest {
+
+    @Autowired private AuthOptions authOptions;
+
+    @Test
+    @DisplayName("Should configure AuthOptions with domains list from YAML")
+    void shouldConfigureDomainsFromYaml() {
+      assertNotNull(authOptions);
+      List<String> domains = authOptions.getDomains();
+      assertNotNull(domains);
+      assertEquals(3, domains.size());
+      assertEquals("login.acme.com", domains.get(0));
+      assertEquals("auth.partner.com", domains.get(1));
+      assertEquals("dev.example.com", domains.get(2));
+    }
+
+    @Test
+    @DisplayName("Should not set single domain when only domains list is configured")
+    void shouldNotSetSingleDomainWhenOnlyDomainsConfigured() {
+      assertNull(authOptions.getDomain());
+    }
+  }
+
+  @Nested
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
+  @TestPropertySource(
+      properties = {
+        "auth0.domain=primary.auth0.com",
+        "auth0.audience=https://api.mcd.com",
+        "auth0.domains[0]=login.acme.com",
+        "auth0.domains[1]=auth.partner.com"
+      })
+  class McdDomainsWithPrimaryDomainTest {
+
+    @Autowired private AuthOptions authOptions;
+
+    @Test
+    @DisplayName("Should configure both domain and domains when both are set")
+    void shouldConfigureBothDomainAndDomains() {
+      assertNotNull(authOptions);
+      // Primary domain is also set for Auth for Agents scenarios
+      assertEquals("primary.auth0.com", authOptions.getDomain());
+
+      List<String> domains = authOptions.getDomains();
+      assertNotNull(domains);
+      assertEquals(2, domains.size());
+      assertEquals("login.acme.com", domains.get(0));
+      assertEquals("auth.partner.com", domains.get(1));
+    }
+  }
+
+  @Nested
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, Auth0SecurityAutoConfiguration.class})
+  @TestPropertySource(
+      properties = {"auth0.domain=single.auth0.com", "auth0.audience=https://api.single.com"})
+  class SingleDomainFallbackTest {
+
+    @Autowired private AuthOptions authOptions;
+
+    @Test
+    @DisplayName("Should fall back to single domain when domains list is not configured")
+    void shouldFallBackToSingleDomain() {
+      assertNotNull(authOptions);
+      assertEquals("single.auth0.com", authOptions.getDomain());
+      assertNull(authOptions.getDomains());
+    }
+  }
+
+  @Nested
+  @SpringBootTest(classes = {Auth0AutoConfiguration.class, DomainResolverBeanTest.TestConfig.class})
+  @TestPropertySource(
+      properties = {"auth0.domain=fallback.auth0.com", "auth0.audience=https://api.resolver.com"})
+  class DomainResolverBeanTest {
+
+    @TestConfiguration
+    static class TestConfig {
+      @Bean
+      public DomainResolver testDomainResolver() {
+        return context -> {
+          String tenant = context.getHeaders().get("x-tenant-id");
+          if ("acme".equals(tenant)) {
+            return Collections.singletonList("login.acme.com");
+          }
+          return Arrays.asList("default1.auth0.com", "default2.auth0.com");
+        };
+      }
+    }
+
+    @Autowired private AuthOptions authOptions;
+
+    @Test
+    @DisplayName("Should use DomainResolver bean when present, taking priority over domains list")
+    void shouldUseResolverBeanWhenPresent() {
+      assertNotNull(authOptions);
+      // When a resolver is present, domainsResolver should be set
+      assertNotNull(authOptions.getDomainsResolver());
+      // Static domains list should NOT be set (resolver takes priority)
+      assertNull(authOptions.getDomains());
+    }
+
+    @Test
+    @DisplayName("Should preserve single domain as fallback alongside resolver")
+    void shouldPreserveSingleDomainWithResolver() {
+      assertEquals("fallback.auth0.com", authOptions.getDomain());
+    }
+  }
+
+  @Nested
+  @SpringBootTest(
+      classes = {Auth0AutoConfiguration.class, ResolverPriorityOverDomainsTest.TestConfig.class})
+  @TestPropertySource(
+      properties = {
+        "auth0.domain=primary.auth0.com",
+        "auth0.audience=https://api.priority.com",
+        "auth0.domains[0]=static1.auth0.com",
+        "auth0.domains[1]=static2.auth0.com"
+      })
+  class ResolverPriorityOverDomainsTest {
+
+    @TestConfiguration
+    static class TestConfig {
+      @Bean
+      public DomainResolver testDomainResolver() {
+        return context -> Collections.singletonList("dynamic.auth0.com");
+      }
+    }
+
+    @Autowired private AuthOptions authOptions;
+
+    @Test
+    @DisplayName("Should prioritize DomainResolver over static domains list")
+    void shouldPrioritizeResolverOverStaticDomains() {
+      assertNotNull(authOptions);
+      // Resolver should win over static domains
+      assertNotNull(authOptions.getDomainsResolver());
+      // Static domains should NOT be set since resolver takes priority
+      assertNull(authOptions.getDomains());
     }
   }
 }

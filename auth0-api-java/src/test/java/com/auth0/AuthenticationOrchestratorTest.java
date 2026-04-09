@@ -11,7 +11,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.*;
 
 public class AuthenticationOrchestratorTest {
@@ -21,7 +20,7 @@ public class AuthenticationOrchestratorTest {
         AbstractAuthentication strategy = mock(AbstractAuthentication.class);
         AuthenticationContext ctx = mock(AuthenticationContext.class);
 
-        when(strategy.authenticate(anyMap(), any()))
+        when(strategy.authenticate(any()))
                 .thenReturn(ctx);
 
         AuthenticationOrchestrator orchestrator =
@@ -31,11 +30,10 @@ public class AuthenticationOrchestratorTest {
         headers.put("authorization", "Bearer token");
 
         AuthenticationContext result =
-                orchestrator.process(headers,
-                        new HttpRequestInfo("GET", "https://api", null));
+                orchestrator.process(new HttpRequestInfo("GET", "https://api", headers));
 
         assertThat(result).isSameAs(ctx);
-        verify(strategy).authenticate(anyMap(), any());
+        verify(strategy).authenticate(any());
     }
 
     @Test
@@ -43,7 +41,7 @@ public class AuthenticationOrchestratorTest {
         AbstractAuthentication strategy = mock(AbstractAuthentication.class);
         BaseAuthException ex = mock(BaseAuthException.class);
 
-        when(strategy.authenticate(anyMap(), any()))
+        when(strategy.authenticate(any()))
                 .thenThrow(ex);
 
         AuthenticationOrchestrator orchestrator =
@@ -52,7 +50,7 @@ public class AuthenticationOrchestratorTest {
         Map<String, String> headers = new HashMap<>();
 
         assertThatThrownBy(() ->
-                orchestrator.process(headers, null)
+                orchestrator.process(new HttpRequestInfo("GET", "https://api", headers))
         ).isSameAs(ex);
     }
 }
