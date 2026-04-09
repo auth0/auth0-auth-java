@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.0-beta.1](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.1) (2026-04-09)
+
+**Added**
+- Adds support for Multiple Custom Domains [\#21](https://github.com/auth0/auth0-auth-java/pull/21) ([tanya732](https://github.com/tanya732))
+- Adds telemetry support [\#34](https://github.com/auth0/auth0-auth-java/pull/34) ([tanya732](https://github.com/tanya732))
+
+**Fixed**
+- Comment out application name in properties file [\#30](https://github.com/auth0/auth0-auth-java/pull/30) ([ClementVicart](https://github.com/ClementVicart))
+
 ## [1.0.0-beta.0](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.0) (2026-03-02)
 
 ### Features

@@ -25,7 +25,7 @@ Add the dependency via Maven:
 <dependency>
     <groupId>com.auth0</groupId>
     <artifactId>auth0-springboot-api</artifactId>
-    <version>1.0.0-beta.0</version>
+    <version>1.0.0-beta.1</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ or Gradle:
 
 ```gradle
 dependencies {
-    implementation 'com.auth0:auth0-springboot-api:1.0.0-beta.0'
+    implementation 'com.auth0:auth0-springboot-api:1.0.0-beta.1'
 }
 ```
 
