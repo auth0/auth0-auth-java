@@ -37,7 +37,7 @@ If you're building a Spring Boot application, use the Spring Boot integration:
 <dependency>
     <groupId>com.auth0</groupId>
     <artifactId>auth0-springboot-api</artifactId>
-    <version>1.0.0-beta.0</version>
+    <version>1.0.0-beta.1</version>
 </dependency>
 ```
 
@@ -84,7 +84,7 @@ Spring Boot integration module is published as a public artifact:
 
 | Module                 | Group ID    | Artifact ID            | Version        | Status           |
 | ---------------------- | ----------- | ---------------------- |----------------| ---------------- |
-| `auth0-springboot-api` | `com.auth0` | `auth0-springboot-api` | `1.0.0-beta.0` | 📦 **Published** |
+| `auth0-springboot-api` | `com.auth0` | `auth0-springboot-api` | `1.0.0-beta.1` | 📦 **Published** |
 
 The core library (`auth0-api-java`) is bundled as an internal dependency within the Spring Boot module and is not published separately.
 
