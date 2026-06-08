@@ -2,7 +2,7 @@
 
 ![Auth0 API SDK for securing your Java API Server using tokens from Auth0](https://cdn.auth0.com/website/sdks/banners/auth0-springboot-api-banner.png)
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/atko-cic/auth0-auth-java/actions)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/auth0/auth0-auth-java/actions)
 ![Java Version](https://img.shields.io/badge/java-8%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -104,7 +104,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/atko-cic/auth0-auth-java/issues)
+- **Issues**: [GitHub Issues](https://github.com/auth0/auth0-auth-java/issues)
 - **Documentation**: [Auth0 Documentation](https://auth0.com/docs)
 - **Community**: [Auth0 Community](https://community.auth0.com/)
 
