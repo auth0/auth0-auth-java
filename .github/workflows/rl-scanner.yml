@@ -1,4 +1,4 @@
-# DEPRECATED: RL scanner is now inlined as the `rl-scanner` job in release.yml.
+# DEPRECATED:  RL scanner is now inlined as the `rl-scanner` job in release.yml.
 # Kept commented for reference; the reusable-workflow layout caused AWS OIDC
 # (sts:AssumeRoleWithWebIdentity) to be rejected by the PRODSEC_TOOLS_ARN trust policy.
 #
