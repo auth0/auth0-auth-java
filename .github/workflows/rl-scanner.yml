@@ -1,85 +1,81 @@
-# DEPRECATED:  RL scanner is now inlined as the `rl-scanner` job in release.yml.
-# Kept commented for reference; the reusable-workflow layout caused AWS OIDC
-# (sts:AssumeRoleWithWebIdentity) to be rejected by the PRODSEC_TOOLS_ARN trust policy.
-#
-# name: RL-Secure Workflow
-#
-# on:
-#   workflow_call:
-#     inputs:
-#       java-version:
-#         required: true
-#         type: string
-#       artifact-name:
-#         required: true
-#         type: string
-#     secrets:
-#       RLSECURE_LICENSE:
-#         required: true
-#       RLSECURE_SITE_KEY:
-#         required: true
-#       SIGNAL_HANDLER_TOKEN:
-#         required: true
-#       SIGNAL_HANDLER_DOMAIN:
-#         required: true
-#       PRODSEC_TOOLS_USER:
-#         required: true
-#       PRODSEC_TOOLS_TOKEN:
-#         required: true
-#       PRODSEC_TOOLS_ARN:
-#         required: true
-#       PRODSEC_PYTHON_TOOLS_REPO:
-#         required: true
-#
-# permissions:
-#   contents: write
-#   id-token: write # This is required for requesting the JWT
-#
-# jobs:
-#   checkout-build-scan-only:
-#     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
-#     runs-on: ubuntu-latest
-#     outputs:
-#       scan-status: ${{ steps.rl-scan-conclusion.outcome }}
-#
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v6
-#
-#       - name: Set up Java
-#         uses: actions/setup-java@v5
-#         with:
-#           distribution: temurin
-#           java-version: ${{ inputs.java-version }}
-#
-#       - name: Set up Gradle
-#         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
-#
-#       - name: Test and Assemble with Gradle
-#         run: ./gradlew assemble check --continue --console=plain
-#
-#       - id: get_version
-#         uses: ./.github/actions/get-version
-#
-#       - name: Create tgz build artifact
-#         run: |
-#           tar -czvf ${{ inputs.artifact-name }} *
-#
-#       - name: Run RL Scanner
-#         id: rl-scan-conclusion
-#         uses: auth0/devsecops-tooling/.github/actions/rl-scan@main
-#         with:
-#           artifact-name: "${{ github.event.repository.name }}"
-#           artifact-path: "${{ github.workspace }}/${{ inputs.artifact-name }}"
-#           version: ${{ steps.get_version.outputs.version }}
-#           RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
-#           RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
-#           SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
-#           SIGNAL_HANDLER_DOMAIN: ${{ secrets.SIGNAL_HANDLER_DOMAIN }}
-#           PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
-#           PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
-#           PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
-#           PRODSEC_PYTHON_TOOLS_REPO: ${{ secrets.PRODSEC_PYTHON_TOOLS_REPO }}
-#
-#       - name: Output scan result
-#         run: echo "scan-status=${{ steps.rl-scan-conclusion.outcome }}" >> $GITHUB_ENV
+name: RL-Secure Workflow
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+    secrets:
+      RLSECURE_LICENSE:
+        required: true
+      RLSECURE_SITE_KEY:
+        required: true
+      SIGNAL_HANDLER_TOKEN:
+        required: true
+      SIGNAL_HANDLER_DOMAIN:
+        required: true
+      PRODSEC_TOOLS_USER:
+        required: true
+      PRODSEC_TOOLS_TOKEN:
+        required: true
+      PRODSEC_TOOLS_ARN:
+        required: true
+      PRODSEC_PYTHON_TOOLS_REPO:
+        required: true
+
+permissions:
+  contents: write
+  id-token: write # This is required for requesting the JWT
+
+jobs:
+  checkout-build-scan-only:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
+    runs-on: ubuntu-latest
+    outputs:
+      scan-status: ${{ steps.rl-scan-conclusion.outcome }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+
+      - name: Test and Assemble with Gradle
+        run: ./gradlew assemble check --continue --console=plain
+
+      - id: get_version
+        uses: ./.github/actions/get-version
+
+      - name: Create tgz build artifact
+        run: |
+          tar -czvf ${{ inputs.artifact-name }} *
+
+      - name: Run RL Scanner
+        id: rl-scan-conclusion
+        uses: auth0/devsecops-tooling/.github/actions/rl-scan@main
+        with:
+          artifact-name: "${{ github.event.repository.name }}"
+          artifact-path: "${{ github.workspace }}/${{ inputs.artifact-name }}"
+          version: ${{ steps.get_version.outputs.version }}
+          RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
+          RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
+          SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
+          SIGNAL_HANDLER_DOMAIN: ${{ secrets.SIGNAL_HANDLER_DOMAIN }}
+          PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
+          PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
+          PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+          PRODSEC_PYTHON_TOOLS_REPO: ${{ secrets.PRODSEC_PYTHON_TOOLS_REPO }}
+
+      - name: Output scan result
+        run: echo "scan-status=${{ steps.rl-scan-conclusion.outcome }}" >> $GITHUB_ENV
