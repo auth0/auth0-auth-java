@@ -1,9 +1,6 @@
 name: Create GitHub Release
 
 on:
-  push:
-    branches:
-      - chore/migrate-rl-scanner-to-useable-action  # TEMPORARY: remove after RL scanner debugging
   pull_request:
     types:
       - closed
@@ -37,7 +34,6 @@ jobs:
       PRODSEC_PYTHON_TOOLS_REPO: ${{ secrets.PRODSEC_PYTHON_TOOLS_REPO }}
 
   release:
-    if: false # TEMPORARY: disabled during RL scanner debugging — re-enable before merge
     uses: ./.github/workflows/java-release.yml
     needs: rl-scanner
     with:
