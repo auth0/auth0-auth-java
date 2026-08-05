@@ -4,7 +4,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/auth0/auth0-auth-java/actions)
 ![Java Version](https://img.shields.io/badge/java-8%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-Apache%202.0-green)
 
 A comprehensive Java library for Auth0 JWT authentication with built-in **DPoP (Demonstration of Proof-of-Possession)** and **Multi-Custom Domain (MCD)** support. This project provides Spring Boot integration for secure API development.
 
@@ -100,7 +100,7 @@ The core library (`auth0-api-java`) is bundled as an internal dependency within 
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
