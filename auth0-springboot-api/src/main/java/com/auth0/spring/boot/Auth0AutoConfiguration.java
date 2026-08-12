@@ -77,6 +77,8 @@ public class Auth0AutoConfiguration {
       }
     }
 
+    builder.telemetry(SpringBootTelemetry.get());
+
     return builder.build();
   }
 

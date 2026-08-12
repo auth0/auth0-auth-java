@@ -6,7 +6,10 @@ import com.auth0.AuthClient;
 import com.auth0.DomainResolver;
 import com.auth0.enums.DPoPMode;
 import com.auth0.models.AuthOptions;
+import com.auth0.telemetry.Telemetry;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +58,24 @@ class Auth0AutoConfigurationTest {
   void shouldRegisterAllBeansInContext() {
     assertTrue(context.containsBean("authOptions"));
     assertTrue(context.containsBean("authClient"));
+  }
+
+  @Test
+  @DisplayName("Should report the springboot wrapper identity in telemetry, nesting the core version")
+  void shouldConfigureWrapperTelemetry() {
+    Telemetry telemetry = authOptions.getTelemetry();
+    assertNotNull(telemetry);
+
+    String value = telemetry.getValue();
+    assertNotNull(value);
+
+    String json = new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
+    // The wrapper must present itself as auth0-springboot-api, not the core auth0-api-java,
+    // and nest the core library version inside env.
+    assertTrue(json.contains("\"name\":\"auth0-springboot-api\""), json);
+    assertFalse(json.contains("\"name\":\"auth0-api-java\""), json);
+    assertTrue(json.contains("\"env\":"), json);
+    assertTrue(json.contains("\"auth0-api-java\":"), json);
   }
 
   @Nested

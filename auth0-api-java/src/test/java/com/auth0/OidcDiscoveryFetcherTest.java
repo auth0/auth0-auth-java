@@ -2,13 +2,16 @@ package com.auth0;
 
 import com.auth0.exception.VerifyAccessTokenException;
 import com.auth0.models.OidcMetadata;
+import com.auth0.telemetry.Telemetry;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -50,6 +53,37 @@ public class OidcDiscoveryFetcherTest {
 
         assertThat(metadata.getIssuer()).isEqualTo(ISSUER);
         assertThat(metadata.getJwksUri()).isEqualTo(JWKS_URI);
+    }
+
+    @Test
+    public void fetch_shouldSendAuth0ClientTelemetryHeader() throws Exception {
+        Telemetry telemetry = new Telemetry("auth0-api-java", "1.0.0", null);
+        OidcDiscoveryFetcher telemetryFetcher = new OidcDiscoveryFetcher(cache, httpClient, telemetry);
+        String discoveryJson = String.format(
+                "{\"issuer\":\"%s\",\"jwks_uri\":\"%s\"}", ISSUER, JWKS_URI);
+        mockSuccessResponse(discoveryJson);
+
+        telemetryFetcher.fetch(ISSUER);
+
+        ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        verify(httpClient).execute(captor.capture());
+        HttpUriRequest sent = captor.getValue();
+        assertThat(sent.getFirstHeader("Auth0-Client")).isNotNull();
+        assertThat(sent.getFirstHeader("Auth0-Client").getValue())
+                .isEqualTo(telemetry.getValue());
+    }
+
+    @Test
+    public void fetch_shouldNotSendTelemetryHeaderWhenAbsent() throws Exception {
+        String discoveryJson = String.format(
+                "{\"issuer\":\"%s\",\"jwks_uri\":\"%s\"}", ISSUER, JWKS_URI);
+        mockSuccessResponse(discoveryJson);
+
+        fetcher.fetch(ISSUER);
+
+        ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        verify(httpClient).execute(captor.capture());
+        assertThat(captor.getValue().getFirstHeader("Auth0-Client")).isNull();
     }
 
     @Test
@@ -132,7 +166,7 @@ public class OidcDiscoveryFetcherTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void constructor_shouldRejectNullHttpClient() {
-        new OidcDiscoveryFetcher(cache, null);
+        new OidcDiscoveryFetcher(cache, (CloseableHttpClient) null);
     }
 
     @Test
