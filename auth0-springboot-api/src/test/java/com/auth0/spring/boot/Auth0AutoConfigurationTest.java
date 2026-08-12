@@ -61,7 +61,8 @@ class Auth0AutoConfigurationTest {
   }
 
   @Test
-  @DisplayName("Should report the springboot wrapper identity in telemetry, nesting the core version")
+  @DisplayName(
+      "Should report the springboot wrapper identity in telemetry, nesting the core version")
   void shouldConfigureWrapperTelemetry() {
     Telemetry telemetry = authOptions.getTelemetry();
     assertNotNull(telemetry);
