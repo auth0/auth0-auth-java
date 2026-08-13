@@ -10,7 +10,6 @@ import com.auth0.models.OidcMetadata;
 import com.auth0.jwk.Jwk;
 import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.JwkProviderBuilder;
-import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.models.HttpRequestInfo;
@@ -39,7 +38,6 @@ class JWTValidator {
     static final String JWKS_CACHE_PREFIX = "jwks:";
 
     private final AuthOptions authOptions;
-    private final JwkProvider jwkProvider;
     private final OidcDiscoveryFetcher discoveryFetcher;
     private final AuthCache<Object> cache;
     private final Map<String, String> telemetryHeaders;
@@ -57,29 +55,6 @@ class JWTValidator {
 
         this.authOptions = authOptions;
         this.telemetryHeaders = telemetryHeaders(authOptions);
-        this.jwkProvider = authOptions.getDomain() != null
-                ? buildDomainJwkProvider(authOptions.getDomain(), this.telemetryHeaders)
-                : null;
-        this.cache = resolveCache(authOptions);
-        this.discoveryFetcher = new OidcDiscoveryFetcher(this.cache, authOptions.getTelemetry());
-    }
-
-    /**
-     * Creates a JWT validator with domain, audience, and a custom JwkProvider.
-     *
-     * @param authOptions Authentication options containing domain and audience
-     * @param jwkProvider Custom JwkProvider for key retrieval
-     */
-    JWTValidator(AuthOptions authOptions, JwkProvider jwkProvider) {
-        if (authOptions == null) {
-            throw new IllegalArgumentException("AuthOptions cannot be null");
-        }
-        if (jwkProvider == null) {
-            throw new IllegalArgumentException("JwkProvider cannot be null");
-        }
-        this.authOptions = authOptions;
-        this.telemetryHeaders = telemetryHeaders(authOptions);
-        this.jwkProvider = jwkProvider;
         this.cache = resolveCache(authOptions);
         this.discoveryFetcher = new OidcDiscoveryFetcher(this.cache, authOptions.getTelemetry());
     }
@@ -89,16 +64,14 @@ class JWTValidator {
      * testing).
      *
      * @param authOptions      Authentication options
-     * @param jwkProvider      Custom JwkProvider for key retrieval
      * @param discoveryFetcher Custom OIDC discovery fetcher
      */
-    JWTValidator(AuthOptions authOptions, JwkProvider jwkProvider, OidcDiscoveryFetcher discoveryFetcher) {
+    JWTValidator(AuthOptions authOptions, OidcDiscoveryFetcher discoveryFetcher) {
         if (authOptions == null) {
             throw new IllegalArgumentException("AuthOptions cannot be null");
         }
         this.authOptions = authOptions;
         this.telemetryHeaders = telemetryHeaders(authOptions);
-        this.jwkProvider = jwkProvider;
         this.cache = resolveCache(authOptions);
         this.discoveryFetcher = discoveryFetcher != null
                 ? discoveryFetcher
@@ -117,15 +90,6 @@ class JWTValidator {
             headers.put(Telemetry.HEADER_NAME, value);
         }
         return headers;
-    }
-
-    /**
-     * Builds a JWKS provider for the legacy single-domain path, attaching the
-     * telemetry header to key-fetch requests. {@link JwkProviderBuilder} derives
-     * the JWKS URL from the domain the same way {@link UrlJwkProvider} does.
-     */
-    private static JwkProvider buildDomainJwkProvider(String domain, Map<String, String> telemetryHeaders) {
-        return new JwkProviderBuilder(domain).headers(telemetryHeaders).build();
     }
 
     /**
@@ -273,10 +237,6 @@ class JWTValidator {
 
     public AuthOptions getAuthOptions() {
         return authOptions;
-    }
-
-    public JwkProvider getJwkProvider() {
-        return jwkProvider;
     }
 
     /**
