@@ -2,63 +2,62 @@ package com.auth0.telemetry;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 /**
- * Provides the Base64-encoded Auth0-Client telemetry header value.
+ * Reads the core library's name and version from the build-filtered
+ * {@code auth0-client-info.properties} resource and builds the default
+ * {@link Telemetry} identity for {@code auth0-api-java}.
  *
- * The payload is a JSON object: {"name":"springboot-api","version":"x.y.z","java":"17"}
+ * <p>Wrappers construct their own {@link Telemetry} instead of using this.
  */
 public final class TelemetryProvider {
 
     private static final String PROPERTIES_FILE = "auth0-client-info.properties";
     private static final String UNKNOWN = "unknown";
 
-    private static volatile String cachedHeaderValue;
+    private static volatile Telemetry cached;
 
     private TelemetryProvider() {
     }
 
-    /**
-     * Returns the Base64url-encoded telemetry header value.
-     *
-     * @return the Auth0-Client header value, or null if it cannot be built
-     */
-    public static String getHeaderValue() {
-        if (cachedHeaderValue != null) {
-            return cachedHeaderValue;
+    /** @return the core {@code auth0-api-java} telemetry identity (no nested env core version) */
+    public static Telemetry getDefault() {
+        if (cached != null) {
+            return cached;
         }
         synchronized (TelemetryProvider.class) {
-            if (cachedHeaderValue != null) {
-                return cachedHeaderValue;
+            if (cached == null) {
+                cached = new Telemetry(readName(), readVersion(), null);
             }
-            cachedHeaderValue = buildHeaderValue();
-            return cachedHeaderValue;
+            return cached;
         }
     }
 
-    private static String buildHeaderValue() {
-        String name = UNKNOWN;
-        String version = UNKNOWN;
+    /** @return the core library version, or {@code "unknown"} if unavailable */
+    public static String coreVersion() {
+        return readVersion();
+    }
 
+    private static String readName() {
+        return read("name");
+    }
+
+    private static String readVersion() {
+        return read("version");
+    }
+
+    private static String read(String key) {
         try (InputStream is = TelemetryProvider.class.getClassLoader()
                 .getResourceAsStream(PROPERTIES_FILE)) {
             if (is != null) {
                 Properties props = new Properties();
                 props.load(is);
-                name = props.getProperty("name", UNKNOWN);
-                version = props.getProperty("version", UNKNOWN);
+                return props.getProperty(key, UNKNOWN);
             }
         } catch (IOException ignored) {
-            // Fall through with defaults
+            // fall through
         }
-
-        String javaVersion = System.getProperty("java.version", UNKNOWN);
-
-        String json = "{\"name\":\"" + name + "\",\"version\":\"" + version + "\",\"java\":\"" + javaVersion + "\"}";
-
-        return java.util.Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(json.getBytes(StandardCharsets.UTF_8));
+        return UNKNOWN;
     }
 }

@@ -2,6 +2,7 @@ package com.auth0;
 
 import com.auth0.exception.VerifyAccessTokenException;
 import com.auth0.models.OidcMetadata;
+import com.auth0.telemetry.Telemetry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,6 +42,7 @@ class OidcDiscoveryFetcher implements Closeable {
     private final AuthCache<Object> cache;
     private final CloseableHttpClient httpClient;
     private final boolean ownsHttpClient;
+    private final String telemetryHeader;
 
     /**
      * Creates a fetcher with the provided cache and the default HTTP client.
@@ -49,7 +51,17 @@ class OidcDiscoveryFetcher implements Closeable {
      * @param cache the unified cache instance
      */
     OidcDiscoveryFetcher(AuthCache<Object> cache) {
-        this(cache, HttpClients.createDefault(), true);
+        this(cache, HttpClients.createDefault(), true, null);
+    }
+
+    /**
+     * Creates a fetcher with the provided cache, default HTTP client, and telemetry.
+     *
+     * @param cache     the unified cache instance
+     * @param telemetry the telemetry identity whose header rides on discovery requests
+     */
+    OidcDiscoveryFetcher(AuthCache<Object> cache, Telemetry telemetry) {
+        this(cache, HttpClients.createDefault(), true, telemetry);
     }
 
     /**
@@ -60,10 +72,23 @@ class OidcDiscoveryFetcher implements Closeable {
      * @param httpClient the HTTP client to use for discovery requests
      */
     OidcDiscoveryFetcher(AuthCache<Object> cache, CloseableHttpClient httpClient) {
-        this(cache, httpClient, false);
+        this(cache, httpClient, false, null);
     }
 
-    private OidcDiscoveryFetcher(AuthCache<Object> cache, CloseableHttpClient httpClient, boolean ownsHttpClient) {
+    /**
+     * Creates a fetcher with the provided cache, a custom HTTP client, and telemetry.
+     * The caller retains ownership of the HTTP client and is responsible for closing it.
+     *
+     * @param cache      the unified cache instance
+     * @param httpClient the HTTP client to use for discovery requests
+     * @param telemetry  the telemetry identity whose header rides on discovery requests
+     */
+    OidcDiscoveryFetcher(AuthCache<Object> cache, CloseableHttpClient httpClient, Telemetry telemetry) {
+        this(cache, httpClient, false, telemetry);
+    }
+
+    private OidcDiscoveryFetcher(AuthCache<Object> cache, CloseableHttpClient httpClient,
+                                 boolean ownsHttpClient, Telemetry telemetry) {
         if (cache == null) {
             throw new IllegalArgumentException("cache must not be null");
         }
@@ -73,6 +98,7 @@ class OidcDiscoveryFetcher implements Closeable {
         this.cache = cache;
         this.httpClient = httpClient;
         this.ownsHttpClient = ownsHttpClient;
+        this.telemetryHeader = telemetry != null ? telemetry.getValue() : null;
     }
 
     /**
@@ -106,6 +132,9 @@ class OidcDiscoveryFetcher implements Closeable {
         try {
             HttpGet request = new HttpGet(discoveryUrl);
             request.setHeader("Accept", "application/json");
+            if (telemetryHeader != null) {
+                request.setHeader(Telemetry.HEADER_NAME, telemetryHeader);
+            }
 
             try (CloseableHttpResponse response = httpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();

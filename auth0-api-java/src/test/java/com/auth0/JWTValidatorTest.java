@@ -71,8 +71,9 @@ public class JWTValidatorTest {
         when(mockDiscoveryFetcher.fetch(anyString()))
                 .thenReturn(new OidcMetadata(ISSUER, JWKS_URI));
 
-        // Use the package-private 3-arg constructor for full control
-        validator = new JWTValidator(options, jwkProvider, mockDiscoveryFetcher);
+        // Inject the mock discovery fetcher; the mock JwkProvider is supplied via the
+        // pre-populated cache, which is the path validateToken actually uses.
+        validator = new JWTValidator(options, mockDiscoveryFetcher);
 
         when(jwk.getPublicKey()).thenReturn(publicKey);
         when(jwkProvider.get(anyString())).thenReturn(jwk);
@@ -84,13 +85,8 @@ public class JWTValidatorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_shouldRejectNullJwkProvider() {
-        AuthOptions options = new AuthOptions.Builder()
-                .domain(DOMAIN)
-                .audience(AUDIENCE)
-                .build();
-
-        new JWTValidator(options, null);
+    public void constructor_shouldRejectNullOptionsWithDiscoveryFetcher() {
+        new JWTValidator(null, (OidcDiscoveryFetcher) null);
     }
 
     @Test
@@ -215,7 +211,6 @@ public class JWTValidatorTest {
     @Test
     public void getters_shouldReturnValues() {
         assertThat(validator.getAuthOptions()).isNotNull();
-        assertThat(validator.getJwkProvider()).isNotNull();
     }
 
     private HttpRequestInfo getHttpRequestInfo() throws InvalidRequestException {

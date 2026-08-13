@@ -3,6 +3,8 @@ package com.auth0.models;
 import com.auth0.DomainResolver;
 import com.auth0.AuthCache;
 import com.auth0.enums.DPoPMode;
+import com.auth0.telemetry.Telemetry;
+import com.auth0.telemetry.TelemetryProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +23,7 @@ public class AuthOptions {
     private final int cacheMaxEntries;
     private final long cacheTtlSeconds;
     private final AuthCache<Object> cache;
+    private final Telemetry telemetry;
 
     public AuthOptions(Builder builder) {
         this.domain = builder.domain;
@@ -37,6 +40,7 @@ public class AuthOptions {
         this.cacheMaxEntries = builder.cacheMaxEntries;
         this.cacheTtlSeconds = builder.cacheTtlSeconds;
         this.cache = builder.cache;
+        this.telemetry = builder.telemetry != null ? builder.telemetry : TelemetryProvider.getDefault();
     }
 
     public String getDomain() {
@@ -112,6 +116,17 @@ public class AuthOptions {
         return cache;
     }
 
+    /**
+     * Returns the telemetry identity reported via the {@code Auth0-Client} header.
+     * Defaults to the core {@code auth0-api-java} identity when not overridden by a
+     * wrapper library.
+     *
+     * @return the {@link Telemetry} identity (never null)
+     */
+    public Telemetry getTelemetry() {
+        return telemetry;
+    }
+
     public static class Builder {
         private String domain;
         private List<String> domains;
@@ -125,6 +140,7 @@ public class AuthOptions {
         private int cacheMaxEntries = 100;
         private long cacheTtlSeconds = 600;
         private AuthCache<Object> cache;
+        private Telemetry telemetry;
 
         public Builder domain(String domain) {
             this.domain = domain;
@@ -246,6 +262,20 @@ public class AuthOptions {
          */
         public Builder cache(AuthCache<Object> cache) {
             this.cache = cache;
+            return this;
+        }
+
+        /**
+         * Overrides the telemetry identity reported via the {@code Auth0-Client}
+         * header. Wrapper libraries use this to report themselves as the top-level
+         * SDK while nesting the core {@code auth0-api-java} version in {@code env}.
+         * When not set, the core identity is used.
+         *
+         * @param telemetry the telemetry identity
+         * @return this builder
+         */
+        public Builder telemetry(Telemetry telemetry) {
+            this.telemetry = telemetry;
             return this;
         }
 
