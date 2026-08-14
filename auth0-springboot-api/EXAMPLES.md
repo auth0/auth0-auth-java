@@ -280,6 +280,68 @@ public class AdminController {
 }
 ```
 
+## On-Behalf-Of Token Exchange (RFC 8693)
+
+When a token is issued via [On-Behalf-Of token exchange](https://datatracker.ietf.org/doc/html/rfc8693), it carries an `act` (actor) claim identifying the client that performed the exchange, and — for chained exchanges — the prior actors in the delegation chain. As a resource server, this SDK does not perform the exchange; it exposes helpers on `Auth0AuthenticationToken` so you can inspect the actor claim on a validated token:
+
+- `getActor()` — the **current actor** (`act.sub`), the client that performed the exchange. Per [RFC 8693 §4.1](https://datatracker.ietf.org/doc/html/rfc8693#section-4.1), this is the **only** actor you should use for access control decisions. Returns `null` for a direct (non-exchanged) token.
+- `getPriorActors()` — the **prior actors** in the delegation chain, ordered from most recent to original. These are **informational only** (audit/logging) and MUST NOT be used for access control per RFC 8693 §4.1. Returns an empty list when there are none.
+
+### Inspecting the Actor Claim
+
+```java
+@RestController
+@RequestMapping("/api")
+public class OnBehalfOfController {
+
+    private static final Set<String> AUTHORIZED_ACTORS = Set.of("mcp_server_client_id");
+
+    @GetMapping("/on-behalf-of")
+    public ResponseEntity<Map<String, Object>> onBehalfOf(Authentication authentication) {
+        if (authentication instanceof Auth0AuthenticationToken auth0Token) {
+            String currentActor = auth0Token.getActor(); // "act.sub", or null for a direct token
+
+            // Use ONLY the current actor for authorization (RFC 8693 §4.1)
+            if (currentActor != null && !AUTHORIZED_ACTORS.contains(currentActor)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "unauthorized_actor"));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                // The user the request is being made on behalf of
+                "user", String.valueOf(auth0Token.getPrincipal()), // "sub" claim
+                // The current actor — safe for access control decisions
+                "currentActor", String.valueOf(currentActor),
+                // Prior actors — audit/logging only, never for access control
+                "priorActors", auth0Token.getPriorActors()
+            ));
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+}
+```
+
+For a chained exchange (`user → SPA → MCP Server 1 → MCP Server 2 → downstream API`), `getActor()` returns `mcp_server_2_client_id` and `getPriorActors()` returns `["mcp_server_1_client_id", "spa_client_id"]`.
+
+### Organizations
+
+When the subject token is organization-bound, On-Behalf-Of exchange preserves the organization context (`org_id`) on the issued token. Membership and RBAC are enforced by Auth0 at issuance; the resource server simply reads the claim via `getOrganizationId()`:
+
+```java
+@GetMapping("/org-context")
+public ResponseEntity<Map<String, Object>> orgContext(Authentication authentication) {
+    if (authentication instanceof Auth0AuthenticationToken auth0Token) {
+        return ResponseEntity.ok(Map.of(
+            "user", String.valueOf(auth0Token.getPrincipal()),
+            "organizationId", String.valueOf(auth0Token.getOrganizationId()) // "org_id", or null
+        ));
+    }
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+}
+```
+
 ## Multiple Custom Domains (MCD)
 
 Multiple Custom Domains (MCD) support enables a single API application to accept access tokens issued by multiple domains associated with the same Auth0 tenant, including the canonical domain and its custom domains.

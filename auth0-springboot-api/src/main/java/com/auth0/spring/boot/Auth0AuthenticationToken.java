@@ -114,4 +114,39 @@ public class Auth0AuthenticationToken extends AbstractAuthenticationToken {
   public Object getClaim(String claimName) {
     return authenticationContext.getClaims().get(claimName);
   }
+
+  /**
+   * Returns the current actor from the RFC 8693 {@code act} claim (the top-level {@code act.sub}).
+   *
+   * <p>For a token issued via On-Behalf-Of token exchange, this identifies the party that performed
+   * the exchange. Per RFC 8693 §4.1, this is the only actor that should be used for access control
+   * decisions.
+   *
+   * @return the current actor identifier, or {@code null} if the token has no {@code act} claim
+   */
+  public String getActor() {
+    return authenticationContext.getActor();
+  }
+
+  /**
+   * Returns the prior actors in the RFC 8693 delegation chain, ordered from the most recent to the
+   * original.
+   *
+   * <p>These are informational only and MUST NOT be used for access control decisions per RFC 8693
+   * §4.1; use them for audit logging only.
+   *
+   * @return an unmodifiable list of prior actor identifiers, or an empty list if there are none
+   */
+  public List<String> getPriorActors() {
+    return authenticationContext.getPriorActors();
+  }
+
+  /**
+   * Returns the organization identifier from the {@code org_id} claim, if present.
+   *
+   * @return the {@code org_id} claim value, or {@code null} if the token is not organization-bound
+   */
+  public String getOrganizationId() {
+    return authenticationContext.getOrganizationId();
+  }
 }

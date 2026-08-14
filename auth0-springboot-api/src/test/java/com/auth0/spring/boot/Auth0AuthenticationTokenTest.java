@@ -195,4 +195,47 @@ class Auth0AuthenticationTokenTest {
     assertTrue(authorities.contains(new SimpleGrantedAuthority("SCOPE_read:users")));
     assertTrue(authorities.contains(new SimpleGrantedAuthority("SCOPE_write:users")));
   }
+
+  @Test
+  @DisplayName("Should delegate getActor to the authentication context")
+  void getActor_shouldDelegateToContext() {
+    AuthenticationContext context = mock(AuthenticationContext.class);
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("sub", "auth0|123456789");
+    when(context.getClaims()).thenReturn(claims);
+    when(context.getActor()).thenReturn("mcp_server_client_id");
+
+    Auth0AuthenticationToken token = new Auth0AuthenticationToken(context);
+
+    assertEquals("mcp_server_client_id", token.getActor());
+  }
+
+  @Test
+  @DisplayName("Should delegate getPriorActors to the authentication context")
+  void getPriorActors_shouldDelegateToContext() {
+    AuthenticationContext context = mock(AuthenticationContext.class);
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("sub", "auth0|123456789");
+    when(context.getClaims()).thenReturn(claims);
+    when(context.getPriorActors())
+        .thenReturn(List.of("mcp_server_1_client_id", "spa_client_id"));
+
+    Auth0AuthenticationToken token = new Auth0AuthenticationToken(context);
+
+    assertEquals(List.of("mcp_server_1_client_id", "spa_client_id"), token.getPriorActors());
+  }
+
+  @Test
+  @DisplayName("Should delegate getOrganizationId to the authentication context")
+  void getOrganizationId_shouldDelegateToContext() {
+    AuthenticationContext context = mock(AuthenticationContext.class);
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("sub", "auth0|123456789");
+    when(context.getClaims()).thenReturn(claims);
+    when(context.getOrganizationId()).thenReturn("org_123");
+
+    Auth0AuthenticationToken token = new Auth0AuthenticationToken(context);
+
+    assertEquals("org_123", token.getOrganizationId());
+  }
 }

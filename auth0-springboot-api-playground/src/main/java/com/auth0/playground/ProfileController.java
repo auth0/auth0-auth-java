@@ -56,4 +56,29 @@ public class ProfileController {
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * On-Behalf-Of (RFC 8693) endpoint — inspects the actor claim of a token issued
+     * via token exchange.
+     * <p>
+     * {@code getActor()} returns the current actor ({@code act.sub}), the only actor to use
+     * for access control per RFC 8693 §4.1. {@code getPriorActors()} returns the delegation
+     * chain for audit logging only. {@code getOrganizationId()} exposes the preserved
+     * {@code org_id} for organization-bound tokens.
+     * </p>
+     */
+    @GetMapping("/on-behalf-of")
+    public ResponseEntity<Map<String, Object>> onBehalfOfEndpoint(Authentication authentication) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("user", authentication.getName());
+
+        if (authentication instanceof Auth0AuthenticationToken) {
+            Auth0AuthenticationToken auth0Token = (Auth0AuthenticationToken) authentication;
+            response.put("currentActor", auth0Token.getActor());
+            response.put("priorActors", auth0Token.getPriorActors());
+            response.put("organizationId", auth0Token.getOrganizationId());
+        }
+
+        return ResponseEntity.ok(response);
+    }
 }

@@ -240,6 +240,16 @@ auth0:
   audience: "https://your-api-identifier"
 ```
 
+## On-Behalf-Of Token Exchange (RFC 8693)
+
+For tokens issued via [On-Behalf-Of token exchange](https://datatracker.ietf.org/doc/html/rfc8693), `Auth0AuthenticationToken` exposes helpers to inspect the `act` (actor) claim:
+
+- `getActor()` — the current actor (`act.sub`), the client that performed the exchange. Per [RFC 8693 §4.1](https://datatracker.ietf.org/doc/html/rfc8693#section-4.1), this is the only actor to use for access control decisions.
+- `getPriorActors()` — the delegation chain, for audit/logging only (never for access control).
+- `getOrganizationId()` — the preserved `org_id` for organization-bound tokens.
+
+See [EXAMPLES.md](./EXAMPLES.md#on-behalf-of-token-exchange-rfc-8693) for full examples.
+
 ## Extensibility
 
 ### Custom Cache Implementation
