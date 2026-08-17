@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0-beta.2](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.2) (2026-08-17)
+
+**Added**
+- Adds support for On-Behalf-Of token exchange - exposes read-only accessors for the RFC 8693 act (actor) claim and the org_id claim on validated tokens. [\#71](https://github.com/auth0/auth0-auth-java/pull/71) ([tanya732](https://github.com/tanya732))
+
+**Changed**
+- Fix license name to Apache-2.0 in POM and README [\#67](https://github.com/auth0/auth0-auth-java/pull/67) ([tanya732](https://github.com/tanya732))
+
+**Fixed**
+- Fix telemetry configuration so the `Auth0-Client` header is attached to outbound Auth0 calls [\#70](https://github.com/auth0/auth0-auth-java/pull/70) ([tanya732](https://github.com/tanya732))
+
 ## [1.0.0-beta.1](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.1) (2026-04-09)
 
 **Added**
