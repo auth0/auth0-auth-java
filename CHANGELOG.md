@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.0-beta.2.1](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.2.1) (2026-09-08)
+
+**Changed**
+- Bump `com.fasterxml.jackson.core:jackson-databind` from 2.21.4 to 2.22.2 [\#73](https://github.com/auth0/auth0-auth-java/pull/73) ([tanya732](https://github.com/tanya732))
+
+**Fixed**
+- Remove unused `application.yml` file from `auth0-springboot-api` module [\#76](https://github.com/auth0/auth0-auth-java/pull/76) ([tanya732](https://github.com/tanya732))
+
 ## [1.0.0-beta.2](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.2) (2026-08-17)
 
 **Added**
