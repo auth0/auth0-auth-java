@@ -7,6 +7,9 @@ plugins {
 group = 'com.auth0'
 version = '1.0.0-SNAPSHOT'
 
+// Override Spring Boot's managed Tomcat version to pick up security fixes
+ext['tomcat.version'] = '10.1.61'
+
 repositories {
     mavenCentral()
 }
