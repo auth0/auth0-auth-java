@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.0-beta.2.2](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.2.2) (2026-11-20)
+
+**Security**
+- Override Spring Boot managed Tomcat (`tomcat-embed-core`) version to 10.1.61 to address CVE-2026-68525, CVE-2026-68569, CVE-2026-73180 and CVE-2026-68763 [\#92](https://github.com/auth0/auth0-auth-java/pull/92) ([tanya732](https://github.com/tanya732))
+- Bump `com.fasterxml.jackson.core:jackson-databind` from 2.22.2 to 2.23.0 to address CVE-2026-110879 [\#90](https://github.com/auth0/auth0-auth-java/pull/90) ([tanya732](https://github.com/tanya732))
+
 ## [1.0.0-beta.2.1](https://github.com/auth0/auth0-auth-java/tree/1.0.0-beta.2.1) (2026-09-08)
 
 **Changed**
